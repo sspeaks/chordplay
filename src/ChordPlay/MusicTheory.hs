@@ -9,6 +9,7 @@ module ChordPlay.MusicTheory
   , voiceChord
   , voiceChordSafe
   , pitchClassFromInt
+  , chordPitchClasses
   , nub'
   ) where
 
@@ -64,6 +65,10 @@ chordIntervals MinMaj7 = [0, 3, 7, 11]
 chordIntervals Maj6    = [0, 4, 7, 9]
 chordIntervals Min6    = [0, 3, 7, 9]
 chordIntervals Dom9    = [-5, -2, 2, 4]   -- rootless 9th: 5, b7, 9, 3 (5th in bass)
+
+chordPitchClasses :: PitchClass -> ChordType -> [PitchClass]
+chordPitchClasses root ct =
+  map (\i -> pitchClassFromInt (fromEnum root + i)) (chordIntervals ct)
 
 voiceChord :: PitchClass -> ChordType -> Int -> [Pitch]
 voiceChord root ct inv =

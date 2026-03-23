@@ -44,3 +44,13 @@ spec = describe "MusicTheory" $ do
       in head inv1 `shouldBe` Pitch B 3
     it "inversion outside -3..3 returns error" $
       voiceChordSafe C Major 4 `shouldBe` Left "Inversion must be between -3 and 3"
+
+  describe "chordPitchClasses" $ do
+    it "C Major has [C, E, G, C] (root doubled)" $
+      chordPitchClasses C Major `shouldBe` [C, E, G, C]
+    it "C Dom7 has [C, E, G, As] (no duplicates)" $
+      chordPitchClasses C Dom7 `shouldBe` [C, E, G, As]
+    it "A Minor has [A, C, E, A] (root doubled)" $
+      chordPitchClasses A Minor `shouldBe` [A, C, E, A]
+    it "Bb Dom7 has [As, D, F, Gs]" $
+      chordPitchClasses As Dom7 `shouldBe` [As, D, F, Gs]
