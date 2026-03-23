@@ -10,6 +10,7 @@ module ChordPlay.MusicTheory
   , voiceChordSafe
   , pitchClassFromInt
   , chordPitchClasses
+  , nearestPitch
   , nub'
   ) where
 
@@ -104,6 +105,18 @@ rotateDown [] = []
 rotateDown ps =
   let (Pitch pc oct) = last ps
   in Pitch pc (oct - 1) : init ps
+
+nearestPitch :: PitchClass -> Int -> Pitch
+nearestPitch pc targetMidi =
+  let pcInt = fromEnum pc
+      octFloat = (fromIntegral targetMidi - fromIntegral pcInt) / 12.0 - 1.0 :: Double
+      octLow = floor octFloat :: Int
+      octHigh = ceiling octFloat :: Int
+      midiLow = (octLow + 1) * 12 + pcInt
+      midiHigh = (octHigh + 1) * 12 + pcInt
+  in if abs (midiLow - targetMidi) <= abs (midiHigh - targetMidi)
+     then Pitch pc octLow
+     else Pitch pc octHigh
 
 nub' :: [Pitch] -> [Pitch]
 nub' [] = []

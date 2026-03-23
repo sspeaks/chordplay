@@ -54,3 +54,16 @@ spec = describe "MusicTheory" $ do
       chordPitchClasses A Minor `shouldBe` [A, C, E, A]
     it "Bb Dom7 has [As, D, F, Gs]" $
       chordPitchClasses As Dom7 `shouldBe` [As, D, F, Gs]
+
+  describe "nearestPitch" $ do
+    it "C nearest to MIDI 60 (C4) returns C4" $
+      nearestPitch C 60 `shouldBe` Pitch C 4
+    it "C nearest to MIDI 61 (Cs4) returns C4 (closer than C5=72)" $
+      nearestPitch C 61 `shouldBe` Pitch C 4
+    it "C nearest to MIDI 59 returns C4 (closer than C3=48)" $
+      nearestPitch C 59 `shouldBe` Pitch C 4
+    it "A nearest to MIDI 48 returns A2 (45, dist 3, vs A3=57)" $
+      nearestPitch A 48 `shouldBe` Pitch A 2
+    it "equidistant tie breaks to lower octave" $
+      -- Fs nearest to MIDI 60: Fs3=54 (dist 6), Fs4=66 (dist 6) → Fs3
+      nearestPitch Fs 60 `shouldBe` Pitch Fs 3
