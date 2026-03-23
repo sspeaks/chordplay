@@ -37,6 +37,7 @@ export class ChordPlayer {
   private activeNodes: { oscillators: OscillatorNode[]; gains: GainNode[] } | null = null;
   private playbackTimer: number | null = null;
   private playbackResolve: (() => void) | null = null;
+  private stopped = false;
 
   private getContext(): AudioContext {
     if (!this.ctx || this.ctx.state === 'closed') {
@@ -124,15 +125,19 @@ export class ChordPlayer {
     style: PlayStyle,
     onChordStart?: (index: number) => void,
   ): Promise<void> {
+    this.stopped = false;
     for (let i = 0; i < chords.length; i++) {
+      if (this.stopped) break;
       const chord = chords[i]!;
       onChordStart?.(i);
       await this.playChord(chord.root, chord.pitches, duration, tuning, style);
+      if (this.stopped) break;
       await new Promise(resolve => setTimeout(resolve, 100));
     }
   }
 
   stopCurrent(): void {
+    this.stopped = true;
     if (this.playbackTimer !== null) {
       window.clearTimeout(this.playbackTimer);
       this.playbackTimer = null;
