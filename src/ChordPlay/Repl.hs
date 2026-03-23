@@ -4,6 +4,7 @@ module ChordPlay.Repl
   , runEditMode
   ) where
 
+import Data.Maybe (fromMaybe)
 import System.IO
 import System.Environment (lookupEnv)
 import System.Process (callProcess)
@@ -81,7 +82,7 @@ playLine input stateRef = do
       modifyIORef stateRef (\s -> s { rsHistory = reverse chords ++ rsHistory s })
 
 chordToNotes :: ChordSymbol -> [Pitch]
-chordToNotes (ChordSymbol root qual inv) = voiceChord root qual inv
+chordToNotes (ChordSymbol root qual inv) = voiceChord root qual (fromMaybe 0 inv)
 
 loadAndPlay :: FilePath -> IORef ReplState -> IO ()
 loadAndPlay path stateRef = do
@@ -116,7 +117,7 @@ runEditMode path isArp = do
 
 showChordSymbol :: ChordSymbol -> String
 showChordSymbol (ChordSymbol root qual inv) =
-  let invStr = if inv == 0 then "" else show inv
+  let invStr = maybe "" show inv
       rootStr = showPitchClass root
       qualStr = showQuality qual
   in invStr ++ rootStr ++ qualStr

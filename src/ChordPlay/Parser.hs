@@ -27,8 +27,8 @@ chordP = do
   qual <- qualityP
   pure (ChordSymbol root qual inv)
 
-inversionP :: Parser Int
-inversionP = option 0 $ do
+inversionP :: Parser (Maybe Int)
+inversionP = optionMaybe $ do
   sign <- option 1 (char '-' >> pure (-1))
   d <- digit
   pure (sign * (read [d] :: Int))

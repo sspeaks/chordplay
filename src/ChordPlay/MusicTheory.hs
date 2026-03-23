@@ -31,7 +31,7 @@ data ChordType
 data ChordSymbol = ChordSymbol
   { csRoot      :: PitchClass
   , csQuality   :: ChordType
-  , csInversion :: Int
+  , csInversion :: Maybe Int
   } deriving (Eq, Show)
 
 pitchClassToInt :: PitchClass -> Int
