@@ -21,18 +21,18 @@ playPcm pcmData = do
   _ <- waitForProcess ph
   pure ()
 
-playChord :: [Pitch] -> Double -> Bool -> IO ()
-playChord pitches duration isArp = do
-  let pcm = renderChord pitches duration isArp
+playChord :: PitchClass -> [Pitch] -> Double -> Bool -> IO ()
+playChord root pitches duration isArp = do
+  let pcm = renderChord root pitches duration isArp
   playPcm pcm `catch` \(e :: IOException) ->
     putStrLn $ "Audio playback failed: " ++ show e
       ++ "\nMake sure PulseAudio is running (WSLg)."
 
-playChords :: [[Pitch]] -> Double -> Bool -> IO ()
+playChords :: [(PitchClass, [Pitch])] -> Double -> Bool -> IO ()
 playChords [] _ _ = pure ()
 playChords chords dur isArp = do
   let silence = renderSilence 0.1
-      pcmChunks = map (\c -> renderChord c dur isArp) chords
+      pcmChunks = map (\(r, c) -> renderChord r c dur isArp) chords
       combined = BL.intercalate silence pcmChunks
   playPcm combined `catch` \(e :: IOException) ->
     putStrLn $ "Audio playback failed: " ++ show e

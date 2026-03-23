@@ -90,7 +90,8 @@ playLine input stateRef = do
       st <- readIORef stateRef
       let arp = rsArpeggio st
           noteGroups = voiceChordSequence (rsSmooth st) chords
-      playChords noteGroups 1.0 arp
+          rootedGroups = zip (map csRoot chords) noteGroups
+      playChords rootedGroups 1.0 arp
       modifyIORef stateRef (\s -> s { rsHistory = reverse chords ++ rsHistory s })
 
 loadAndPlay :: FilePath -> IORef ReplState -> IO ()
@@ -113,7 +114,8 @@ runBatch path isArp smooth = do
         Left err -> putStrLn $ "Parse error: " ++ err
         Right chords -> do
           let noteGroups = voiceChordSequence smooth chords
-          playChords noteGroups 1.0 isArp
+              rootedGroups = zip (map csRoot chords) noteGroups
+          playChords rootedGroups 1.0 isArp
 
 runEditMode :: FilePath -> Bool -> Maybe SmoothMode -> IO ()
 runEditMode path isArp smooth = do

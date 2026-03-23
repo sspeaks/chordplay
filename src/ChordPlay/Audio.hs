@@ -45,20 +45,24 @@ justRatio 11 = 15/8      -- major 7th
 justRatio n  = 2.0 * justRatio (n - 12)  -- extend to higher octaves
 
 -- Compute just-intoned frequencies for a chord.
--- Root frequency from equal temperament, other notes tuned relative to root.
-justFrequencies :: [Pitch] -> [Double]
-justFrequencies [] = []
-justFrequencies (root:rest) =
-  let rootFreq = pitchFrequency root
-      rootMidi = pitchToMidi root
-  in rootFreq : map (\p -> rootFreq * justRatio (pitchToMidi p - rootMidi)) rest
+-- Root pitch class sets the reference for just ratios, even for rootless
+-- voicings where the root isn't the bass note (e.g., Dom9).
+justFrequencies :: PitchClass -> [Pitch] -> [Double]
+justFrequencies _ [] = []
+justFrequencies root pitches =
+  let bassMidi = minimum (map pitchToMidi pitches)
+      rootPc = fromEnum root
+      -- Place root reference at or below the bass note
+      rootMidi = bassMidi - ((bassMidi - rootPc) `mod` 12)
+      rootFreq = 440.0 * (2.0 ** (fromIntegral (rootMidi - 69) / 12.0))
+  in map (\p -> rootFreq * justRatio (pitchToMidi p - rootMidi)) pitches
 
 -- Generate raw sample values for a set of pitches
-generateSamples :: [Pitch] -> Double -> Bool -> [Double]
-generateSamples [] _ _ = []
-generateSamples pitches duration isArp =
+generateSamples :: PitchClass -> [Pitch] -> Double -> Bool -> [Double]
+generateSamples _ [] _ _ = []
+generateSamples root pitches duration isArp =
   let totalSamples = round (fromIntegral sampleRate * duration) :: Int
-      freqs = justFrequencies pitches
+      freqs = justFrequencies root pitches
       offsets = if isArp
         then [fromIntegral (i * arpStaggerSamples) | i <- [0 .. length pitches - 1]]
         else replicate (length pitches) 0.0
@@ -100,11 +104,11 @@ waveform freq t =
   sum [ amp * sin (2 * pi * fromIntegral h * freq * t) | (h, amp) <- harmonics ]
 
 -- Render a chord to 16-bit signed LE PCM ByteString
-renderChord :: [Pitch] -> Double -> Bool -> BL.ByteString
-renderChord [] _ _ = BL.empty
-renderChord _ duration _ | duration <= 0 = BL.empty
-renderChord pitches duration isArp =
-  let samples = generateSamples pitches duration isArp
+renderChord :: PitchClass -> [Pitch] -> Double -> Bool -> BL.ByteString
+renderChord _ [] _ _ = BL.empty
+renderChord _ _ duration _ | duration <= 0 = BL.empty
+renderChord root pitches duration isArp =
+  let samples = generateSamples root pitches duration isArp
       peak = if null samples then 0 else maximum (map abs samples)
       scale = if peak > 0 then 32000.0 / peak else 1.0
       clampedSamples = map (\s -> fromIntegral (round (s * scale) :: Int) :: Int16) samples
