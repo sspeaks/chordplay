@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   pitchClassToInt,
+  pitchClassFromInt,
   pitchToMidi,
   pitchFrequency,
   chordIntervals,
@@ -19,6 +20,19 @@ describe('pitchClassToInt', () => {
     expect(pitchClassToInt('Cs')).toBe(1);
     expect(pitchClassToInt('A')).toBe(9);
     expect(pitchClassToInt('B')).toBe(11);
+  });
+});
+
+describe('pitchClassFromInt', () => {
+  it('0 → C, 11 → B', () => {
+    expect(pitchClassFromInt(0)).toBe('C');
+    expect(pitchClassFromInt(11)).toBe('B');
+  });
+  it('handles negatives: -1 → B', () => {
+    expect(pitchClassFromInt(-1)).toBe('B');
+  });
+  it('handles wrapping: 12 → C', () => {
+    expect(pitchClassFromInt(12)).toBe('C');
   });
 });
 
