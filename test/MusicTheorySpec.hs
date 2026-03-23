@@ -40,7 +40,7 @@ spec = describe "MusicTheory" $ do
       let notes = voiceChord C Dom7 0
       in length notes `shouldBe` length (nub' notes)
     it "1st inversion rotates bottom note up" $
-      let inv1 = voiceChord G Dom7 1    -- B3 D4 F4 G4
-      in head inv1 `shouldBe` Pitch B 3
+      let inv1 = voiceChord G Dom7 1    -- B2 D3 F3 G3
+      in head inv1 `shouldBe` Pitch B 2
     it "inversion outside -3..3 returns error" $
       voiceChordSafe C Major 4 `shouldBe` Left "Inversion must be between -3 and 3"
