@@ -150,6 +150,7 @@ showQuality Sus2    = "sus2"
 showQuality MinMaj7 = "mMaj7"
 showQuality Maj6    = "6"
 showQuality Min6    = "m6"
+showQuality Dom9    = "9"
 
 printHelp :: IO ()
 printHelp = putStrLn $ unlines

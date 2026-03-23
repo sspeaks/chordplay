@@ -74,6 +74,7 @@ qualityP = choice
   , try (string "+")     >> pure Aug
   , try (string "sus4")  >> pure Sus4
   , try (string "sus2")  >> pure Sus2
+  , try (string "9")     >> pure Dom9
   , try (string "7")     >> pure Dom7
   , try (string "6")     >> pure Maj6
   , pure Major

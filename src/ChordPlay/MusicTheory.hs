@@ -25,6 +25,7 @@ data ChordType
   = Major | Minor | Dom7 | Maj7 | Min7
   | Dim | Dim7 | Aug | HalfDim7
   | Sus4 | Sus2 | MinMaj7 | Maj6 | Min6
+  | Dom9
   deriving (Eq, Show, Enum, Bounded)
 
 data ChordSymbol = ChordSymbol
@@ -62,6 +63,7 @@ chordIntervals Sus2    = [0, 2, 7, 12]
 chordIntervals MinMaj7 = [0, 3, 7, 11]
 chordIntervals Maj6    = [0, 4, 7, 9]
 chordIntervals Min6    = [0, 3, 7, 9]
+chordIntervals Dom9    = [7, 10, 14, 16]  -- rootless 9th: 5, b7, 9, 3 (5th in bass)
 
 voiceChord :: PitchClass -> ChordType -> Int -> [Pitch]
 voiceChord root ct inv =
