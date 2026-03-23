@@ -22,11 +22,11 @@ releaseTime = 0.200
 sustainLevel :: Double
 sustainLevel = 0.70
 
--- Harmonic amplitudes approximating a male singing voice ("ee" vowel)
--- Strong fundamental, dip in mid harmonics (F1-F2 gap), boost in upper
--- harmonics near the second formant (~2500 Hz) for brightness
+-- Harmonic amplitudes tuned for barbershop: strong low harmonics for
+-- overtone locking between voices in just intonation, moderate rolloff,
+-- with a slight H7 boost to reinforce the septimal 7th (7/4) in V7 chords
 harmonics :: [(Int, Double)]
-harmonics = [(1, 1.0), (2, 0.35), (3, 0.2), (4, 0.15), (5, 0.3), (6, 0.45), (7, 0.5), (8, 0.4), (9, 0.25), (10, 0.12)]
+harmonics = [(1, 1.0), (2, 0.7), (3, 0.55), (4, 0.35), (5, 0.25), (6, 0.12), (7, 0.18), (8, 0.06)]
 
 -- Just intonation ratios for each semitone interval from the root.
 -- These are the pure frequency ratios that produce "ringing" barbershop chords.
