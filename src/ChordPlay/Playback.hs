@@ -30,9 +30,10 @@ playChord pitches duration isArp = do
 
 playChords :: [[Pitch]] -> Double -> Bool -> IO ()
 playChords [] _ _ = pure ()
-playChords [c] dur isArp = playChord c dur isArp
-playChords (c:cs) dur isArp = do
-  playChord c dur isArp
+playChords chords dur isArp = do
   let silence = renderSilence 0.1
-  playPcm silence
-  playChords cs dur isArp
+      pcmChunks = map (\c -> renderChord c dur isArp) chords
+      combined = BL.intercalate silence pcmChunks
+  playPcm combined `catch` \(e :: IOException) ->
+    putStrLn $ "Audio playback failed: " ++ show e
+      ++ "\nMake sure PulseAudio is running (WSLg)."
