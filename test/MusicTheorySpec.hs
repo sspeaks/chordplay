@@ -152,3 +152,28 @@ spec = describe "MusicTheory" $ do
                    ]
       in voiceChordSequence (Just SmoothEqual) chords
            `shouldBe` voiceChordSequence Nothing chords
+
+    it "barbershop progression has smooth movement" $
+      -- D A7 A9 D D7 Ab7 G6 Gm6 D F#7
+      let chords = [ ChordSymbol D Major Nothing
+                   , ChordSymbol A Dom7 Nothing
+                   , ChordSymbol A Dom9 Nothing
+                   , ChordSymbol D Major Nothing
+                   , ChordSymbol D Dom7 Nothing
+                   , ChordSymbol Gs Dom7 Nothing
+                   , ChordSymbol G Maj6 Nothing
+                   , ChordSymbol G Min6 Nothing
+                   , ChordSymbol D Major Nothing
+                   , ChordSymbol Fs Dom7 Nothing
+                   ]
+          smoothResult = voiceChordSequence (Just SmoothEqual) chords
+          indepResult = voiceChordSequence Nothing chords
+          totalMovement voicings = sum
+            [ abs (pitchToMidi a - pitchToMidi b)
+            | (v1, v2) <- zip voicings (tail voicings)
+            , (a, b) <- zip v1 v2
+            ]
+      in do
+        length smoothResult `shouldBe` 10
+        all (\v -> length v == 4) smoothResult `shouldBe` True
+        totalMovement smoothResult `shouldSatisfy` (< totalMovement indepResult)
