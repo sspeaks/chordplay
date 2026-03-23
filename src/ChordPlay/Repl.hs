@@ -77,7 +77,7 @@ playLine input stateRef = do
       st <- readIORef stateRef
       let arp = rsArpeggio st
           noteGroups = map chordToNotes chords
-      playChords noteGroups 1.5 arp
+      playChords noteGroups 1.0 arp
       modifyIORef stateRef (\s -> s { rsHistory = reverse chords ++ rsHistory s })
 
 chordToNotes :: ChordSymbol -> [Pitch]
@@ -103,7 +103,7 @@ runBatch path isArp = do
         Left err -> putStrLn $ "Parse error: " ++ err
         Right chords -> do
           let noteGroups = map chordToNotes chords
-          playChords noteGroups 1.5 isArp
+          playChords noteGroups 1.0 isArp
 
 runEditMode :: FilePath -> Bool -> IO ()
 runEditMode path isArp = do

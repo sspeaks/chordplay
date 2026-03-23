@@ -33,6 +33,6 @@ playChords [] _ _ = pure ()
 playChords [c] dur isArp = playChord c dur isArp
 playChords (c:cs) dur isArp = do
   playChord c dur isArp
-  let silence = renderSilence 0.3
+  let silence = renderSilence 0.1
   playPcm silence
   playChords cs dur isArp
