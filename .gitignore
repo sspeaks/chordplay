@@ -2,3 +2,5 @@ dist-newstyle/
 result
 .direnv/
 *.txt
+.superpowers/
+web/node_modules
