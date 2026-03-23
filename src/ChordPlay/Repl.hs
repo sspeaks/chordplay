@@ -4,7 +4,6 @@ module ChordPlay.Repl
   , runEditMode
   ) where
 
-import Data.Maybe (fromMaybe)
 import System.IO
 import System.Environment (lookupEnv)
 import System.Process (callProcess)
@@ -16,14 +15,15 @@ import ChordPlay.Playback
 
 data ReplState = ReplState
   { rsArpeggio :: Bool
+  , rsSmooth   :: Maybe SmoothMode
   , rsHistory  :: [ChordSymbol]
   }
 
-repl :: IO ()
-repl = do
+repl :: Maybe SmoothMode -> IO ()
+repl smooth = do
   hSetBuffering stdout LineBuffering
   putStrLn "ChordPlay — type chords to hear them, :help for commands"
-  stateRef <- newIORef (ReplState False [])
+  stateRef <- newIORef (ReplState False smooth [])
   replLoop stateRef
 
 replLoop :: IORef ReplState -> IO ()
@@ -55,6 +55,18 @@ replLoop stateRef = do
           modifyIORef stateRef (\s -> s { rsHistory = [] })
           putStrLn "Session cleared"
           replLoop stateRef
+        ":smooth" -> do
+          modifyIORef stateRef (\s -> s { rsSmooth = Just SmoothEqual })
+          putStrLn "Smooth voice leading ON (equal weight)"
+          replLoop stateRef
+        ":smooth-bass" -> do
+          modifyIORef stateRef (\s -> s { rsSmooth = Just SmoothBass })
+          putStrLn "Smooth voice leading ON (bass weighted)"
+          replLoop stateRef
+        ":nosmooth" -> do
+          modifyIORef stateRef (\s -> s { rsSmooth = Nothing })
+          putStrLn "Smooth voice leading OFF"
+          replLoop stateRef
         _
           | take 6 line == ":load " -> do
               let path = drop 6 line
@@ -77,12 +89,9 @@ playLine input stateRef = do
     Right chords -> do
       st <- readIORef stateRef
       let arp = rsArpeggio st
-          noteGroups = map chordToNotes chords
+          noteGroups = voiceChordSequence (rsSmooth st) chords
       playChords noteGroups 1.0 arp
       modifyIORef stateRef (\s -> s { rsHistory = reverse chords ++ rsHistory s })
-
-chordToNotes :: ChordSymbol -> [Pitch]
-chordToNotes (ChordSymbol root qual inv) = voiceChord root qual (fromMaybe 0 inv)
 
 loadAndPlay :: FilePath -> IORef ReplState -> IO ()
 loadAndPlay path stateRef = do
@@ -93,8 +102,8 @@ loadAndPlay path stateRef = do
       contents <- readFile path
       playLine contents stateRef
 
-runBatch :: FilePath -> Bool -> IO ()
-runBatch path isArp = do
+runBatch :: FilePath -> Bool -> Maybe SmoothMode -> IO ()
+runBatch path isArp smooth = do
   exists <- doesFileExist path
   if not exists
     then putStrLn $ "File not found: " ++ path
@@ -103,17 +112,17 @@ runBatch path isArp = do
       case parseChords contents of
         Left err -> putStrLn $ "Parse error: " ++ err
         Right chords -> do
-          let noteGroups = map chordToNotes chords
+          let noteGroups = voiceChordSequence smooth chords
           playChords noteGroups 1.0 isArp
 
-runEditMode :: FilePath -> Bool -> IO ()
-runEditMode path isArp = do
+runEditMode :: FilePath -> Bool -> Maybe SmoothMode -> IO ()
+runEditMode path isArp smooth = do
   editor <- lookupEnv "EDITOR"
   case editor of
     Nothing -> putStrLn "EDITOR not set"
     Just ed -> do
       callProcess ed [path]
-      runBatch path isArp
+      runBatch path isArp smooth
 
 showChordSymbol :: ChordSymbol -> String
 showChordSymbol (ChordSymbol root qual inv) =
@@ -161,6 +170,9 @@ printHelp = putStrLn $ unlines
   , "  :save <file>   Save session chords to file"
   , "  :arp           Switch to arpeggio mode"
   , "  :block         Switch to block chord mode"
+  , "  :smooth        Enable smooth voice leading (equal weight)"
+  , "  :smooth-bass   Enable smooth voice leading (bass weighted)"
+  , "  :nosmooth      Disable smooth voice leading"
   , "  :list          Show chords in current session"
   , "  :clear         Clear session"
   , "  :help          Show this help"
