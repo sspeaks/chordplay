@@ -1,0 +1,37 @@
+// Chromatic pitch classes — matches Haskell's PitchClass enum order
+export const PITCH_CLASSES = ['C','Cs','D','Ds','E','F','Fs','G','Gs','A','As','B'] as const;
+export type PitchClass = typeof PITCH_CLASSES[number];
+
+export const CHORD_TYPES = [
+  'Major','Minor','Dom7','Maj7','Min7',
+  'Dim','Dim7','Aug','HalfDim7',
+  'Sus4','Sus2','MinMaj7','Maj6','Min6',
+  'Dom9'
+] as const;
+export type ChordType = typeof CHORD_TYPES[number];
+
+export type SmoothMode = 'equal' | 'bass';
+
+export interface Pitch {
+  readonly pitchClass: PitchClass;
+  readonly octave: number;
+}
+
+export interface ChordSymbol {
+  readonly root: PitchClass;
+  readonly quality: ChordType;
+  readonly inversion: number | null;  // null = auto-voice in smooth mode
+}
+
+export type Tuning = 'just' | 'equal';
+export type PlayStyle = 'block' | 'arpeggio';
+export type VoiceLeading = 'off' | 'smooth' | 'bass';
+
+// Result type for parser
+export type ParseResult<T> =
+  | { ok: true; value: T }
+  | { ok: false; error: string };
+
+// Voice part labels for visualization
+export const VOICE_PARTS = ['Bass', 'Bari', 'Tenor', 'Lead'] as const;
+export type VoicePart = typeof VOICE_PARTS[number];
