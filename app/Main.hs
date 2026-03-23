@@ -26,6 +26,7 @@ main = do
       printUsage
     Just smoothMode -> case (edit, rest) of
       (False, [])     -> repl smoothMode
+      (True,  [])     -> printUsage
       (False, [path]) -> runBatch path arp smoothMode
       (True,  [path]) -> runEditMode path arp smoothMode
       _               -> printUsage

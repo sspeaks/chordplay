@@ -183,5 +183,6 @@ printHelp = putStrLn $ unlines
   , "  Qualities:  (none)=maj, m, 7, maj7, m7, dim, dim7, aug, +"
   , "              m7b5, sus4, sus2, mMaj7, 6, m6"
   , "  Inversions: 0-3 (positive), -1 to -3 (negative)"
+  , "  Note: without explicit inversion, :smooth mode auto-voices"
   , "  Examples:   C  Am7  Bb7  2Eb  -1G7  F#dim7"
   ]

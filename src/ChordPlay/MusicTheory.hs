@@ -131,6 +131,7 @@ nub' :: [Pitch] -> [Pitch]
 nub' [] = []
 nub' (x:xs) = x : nub' (filter (/= x) xs)
 
+-- Precondition: prevPitches and nextPCs are both 4-element lists.
 smoothVoice :: SmoothMode -> [Pitch] -> [PitchClass] -> [Pitch]
 smoothVoice mode prevPitches nextPCs =
   let sorted = sortOn pitchToMidi prevPitches
