@@ -17,7 +17,7 @@ module ChordPlay.MusicTheory
   , voiceChordSequence
   ) where
 
-import Data.List (permutations, sortOn)
+import Data.List (permutations, sort, sortOn)
 import Data.Maybe (fromMaybe)
 
 data PitchClass = C | Cs | D | Ds | E | F | Fs | G | Gs | A | As | B
@@ -146,7 +146,12 @@ smoothVoice mode prevPitches nextPCs =
             movements = zipWith (\p n -> abs (p - n)) prevMidis placedMidis
             totalCost = sum $ zipWith (*) weights movements
             maxMove = maximum movements
-        in (totalCost, maxMove, placed)
+            -- Penalize voicings with adjacent notes 1-2 semitones apart
+            -- (half/whole step clusters). Unisons (0) are fine (doubled roots).
+            sortedMidis = sort placedMidis
+            gaps = zipWith (-) (tail sortedMidis) sortedMidis
+            clusterPenalty = 12 * length (filter (\g -> g >= 1 && g <= 2) gaps)
+        in (totalCost + clusterPenalty, maxMove, placed)
       results = map score perms
       (_, _, best) = head $ sortOn (\(c, m, _) -> (c, m)) results
   in best

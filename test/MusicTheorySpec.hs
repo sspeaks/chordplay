@@ -2,6 +2,7 @@ module MusicTheorySpec (spec) where
 
 import Test.Hspec
 import Data.Maybe (fromMaybe)
+import qualified Data.List
 import ChordPlay.MusicTheory
 
 spec :: Spec
@@ -104,6 +105,17 @@ spec = describe "MusicTheory" $ do
           nextPCs = chordPitchClasses A Minor
           result = smoothVoice SmoothBass prev nextPCs
       in length result `shouldBe` 4
+
+    it "avoids half/whole step clusters between voices" $
+      -- A7 [A3,Cs4,E4,G4] → A9 [E,B,Cs,G]: without penalty the
+      -- algorithm would put B3 next to Cs4 (2 semitones). With the
+      -- cluster penalty it should spread them out.
+      let prev = [Pitch A 3, Pitch Cs 4, Pitch E 4, Pitch G 4]
+          nextPCs = chordPitchClasses A Dom9
+          result = smoothVoice SmoothEqual prev nextPCs
+          sortedMidis = Data.List.sort (map pitchToMidi result)
+          gaps = zipWith (-) (tail sortedMidis) sortedMidis
+      in all (> 2) gaps `shouldBe` True
 
   describe "voiceChordSequence" $ do
     it "empty list returns empty list" $
