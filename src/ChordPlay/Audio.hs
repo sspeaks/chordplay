@@ -25,7 +25,7 @@ sustainLevel = 0.70
 -- Harmonic amplitudes approximating a male singing voice ("ah" vowel)
 -- Strong 2nd/3rd harmonics for warmth, gradual rolloff for presence
 harmonics :: [(Int, Double)]
-harmonics = [(1, 1.0), (2, 0.8), (3, 0.6), (4, 0.3), (5, 0.2), (6, 0.1), (7, 0.08), (8, 0.05)]
+harmonics = [(1, 1.0), (2, 0.8), (3, 0.6), (4, 0.45), (5, 0.3), (6, 0.2), (7, 0.15), (8, 0.1)]
 
 -- Just intonation ratios for each semitone interval from the root.
 -- These are the pure frequency ratios that produce "ringing" barbershop chords.
