@@ -22,9 +22,10 @@ releaseTime = 0.200
 sustainLevel :: Double
 sustainLevel = 0.70
 
--- Harmonic amplitudes for warm organ-like tone
+-- Harmonic amplitudes approximating a male singing voice ("ah" vowel)
+-- Strong 2nd/3rd harmonics for warmth, gradual rolloff for presence
 harmonics :: [(Int, Double)]
-harmonics = [(1, 1.0), (2, 0.5), (3, 0.25), (4, 0.125)]
+harmonics = [(1, 1.0), (2, 0.8), (3, 0.6), (4, 0.3), (5, 0.2), (6, 0.1), (7, 0.08), (8, 0.05)]
 
 -- Generate raw sample values for a set of pitches
 generateSamples :: [Pitch] -> Double -> Bool -> [Double]
