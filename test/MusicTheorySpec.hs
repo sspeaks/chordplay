@@ -1,6 +1,7 @@
 module MusicTheorySpec (spec) where
 
 import Test.Hspec
+import Data.Maybe (fromMaybe)
 import ChordPlay.MusicTheory
 
 spec :: Spec
@@ -103,3 +104,51 @@ spec = describe "MusicTheory" $ do
           nextPCs = chordPitchClasses A Minor
           result = smoothVoice SmoothBass prev nextPCs
       in length result `shouldBe` 4
+
+  describe "voiceChordSequence" $ do
+    it "empty list returns empty list" $
+      voiceChordSequence Nothing [] `shouldBe` []
+
+    it "Nothing mode matches independent voicing" $
+      let chords = [ ChordSymbol C Major Nothing
+                   , ChordSymbol A Minor Nothing
+                   , ChordSymbol F Major Nothing
+                   ]
+          independent = map (\(ChordSymbol r q i) -> voiceChord r q (fromMaybe 0 i)) chords
+      in voiceChordSequence Nothing chords `shouldBe` independent
+
+    it "single chord same as independent voicing" $
+      let chord = ChordSymbol C Major Nothing
+      in voiceChordSequence (Just SmoothEqual) [chord]
+           `shouldBe` [voiceChord C Major 0]
+
+    it "explicit inversion mid-sequence is respected" $
+      let chords = [ ChordSymbol C Major Nothing      -- root position
+                   , ChordSymbol A Minor (Just 2)     -- forced 2nd inversion
+                   , ChordSymbol F Major Nothing       -- smooth from prev
+                   ]
+          result = voiceChordSequence (Just SmoothEqual) chords
+      in do
+        length result `shouldBe` 3
+        -- Second chord must match voiceChord A Minor 2 exactly
+        (result !! 1) `shouldBe` voiceChord A Minor 2
+
+    it "smooth mode produces less total movement than independent" $
+      let chords = [ ChordSymbol C Major Nothing
+                   , ChordSymbol Cs Major Nothing  -- chromatic walk
+                   ]
+          smoothResult = voiceChordSequence (Just SmoothEqual) chords
+          indepResult = voiceChordSequence Nothing chords
+          movement voicings = sum
+            [ abs (pitchToMidi a - pitchToMidi b)
+            | (v1, v2) <- zip voicings (tail voicings)
+            , (a, b) <- zip v1 v2
+            ]
+      in movement smoothResult `shouldSatisfy` (<= movement indepResult)
+
+    it "all chords have explicit inversions — smooth has no effect" $
+      let chords = [ ChordSymbol C Major (Just 0)
+                   , ChordSymbol G Dom7 (Just 1)
+                   ]
+      in voiceChordSequence (Just SmoothEqual) chords
+           `shouldBe` voiceChordSequence Nothing chords

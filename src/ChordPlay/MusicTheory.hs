@@ -14,9 +14,11 @@ module ChordPlay.MusicTheory
   , nub'
   , SmoothMode(..)
   , smoothVoice
+  , voiceChordSequence
   ) where
 
 import Data.List (permutations, sortOn)
+import Data.Maybe (fromMaybe)
 
 data PitchClass = C | Cs | D | Ds | E | F | Fs | G | Gs | A | As | B
   deriving (Eq, Ord, Show, Enum, Bounded)
@@ -147,3 +149,19 @@ smoothVoice mode prevPitches nextPCs =
       results = map score perms
       (_, _, best) = head $ sortOn (\(c, m, _) -> (c, m)) results
   in best
+
+voiceChordSequence :: Maybe SmoothMode -> [ChordSymbol] -> [[Pitch]]
+voiceChordSequence _ [] = []
+voiceChordSequence Nothing chords =
+  map (\(ChordSymbol r q i) -> voiceChord r q (fromMaybe 0 i)) chords
+voiceChordSequence (Just mode) (c:cs) =
+  let firstVoicing = voiceChord (csRoot c) (csQuality c) (fromMaybe 0 (csInversion c))
+  in firstVoicing : go firstVoicing cs
+  where
+    go _ [] = []
+    go prev (chord:rest) =
+      let voicing = case csInversion chord of
+            Just n  -> voiceChord (csRoot chord) (csQuality chord) n
+            Nothing -> smoothVoice mode prev
+                         (chordPitchClasses (csRoot chord) (csQuality chord))
+      in voicing : go voicing rest
