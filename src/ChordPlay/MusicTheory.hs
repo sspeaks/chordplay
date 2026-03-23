@@ -61,8 +61,8 @@ chordIntervals HalfDim7 = [0, 3, 6, 10]
 chordIntervals Sus4    = [0, 5, 7, 12]
 chordIntervals Sus2    = [0, 2, 7, 12]
 chordIntervals MinMaj7 = [0, 3, 7, 11]
-chordIntervals Maj6    = [0, 4, 9, 19]   -- root, 3, 6, 5 — 5th up an octave to separate from 6th
-chordIntervals Min6    = [0, 3, 9, 19]   -- root, m3, 6, 5 — same voicing
+chordIntervals Maj6    = [-12, -8, -3, 7]  -- root, 3, 6, 5 — root dropped octave, 5th separated from 6th
+chordIntervals Min6    = [-12, -9, -3, 7]  -- root, m3, 6, 5 — same voicing
 chordIntervals Dom9    = [-5, -2, 2, 4]   -- rootless 9th: 5, b7, 9, 3 (5th in bass)
 
 voiceChord :: PitchClass -> ChordType -> Int -> [Pitch]
