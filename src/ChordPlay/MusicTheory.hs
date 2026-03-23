@@ -67,8 +67,7 @@ chordIntervals Dom9    = [-5, -2, 2, 4]   -- rootless 9th: 5, b7, 9, 3 (5th in b
 
 voiceChord :: PitchClass -> ChordType -> Int -> [Pitch]
 voiceChord root ct inv =
-  let baseOct = if fromEnum root >= 7 then 2 else 3  -- G(7)..B(11) → octave 2, C(0)..F#(6) → octave 3
-      baseMidi = pitchToMidi (Pitch root baseOct)
+  let baseMidi = pitchToMidi (Pitch root 3)
       intervals = chordIntervals ct
       basePitches = map (\i -> midiToPitch (baseMidi + i)) intervals
       clampedInv = max (-3) (min 3 inv)
