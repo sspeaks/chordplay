@@ -12,7 +12,11 @@ module ChordPlay.MusicTheory
   , chordPitchClasses
   , nearestPitch
   , nub'
+  , SmoothMode(..)
+  , smoothVoice
   ) where
+
+import Data.List (permutations, sortOn)
 
 data PitchClass = C | Cs | D | Ds | E | F | Fs | G | Gs | A | As | B
   deriving (Eq, Ord, Show, Enum, Bounded)
@@ -29,6 +33,9 @@ data ChordType
   | Sus4 | Sus2 | MinMaj7 | Maj6 | Min6
   | Dom9
   deriving (Eq, Show, Enum, Bounded)
+
+data SmoothMode = SmoothEqual | SmoothBass
+  deriving (Eq, Show)
 
 data ChordSymbol = ChordSymbol
   { csRoot      :: PitchClass
@@ -121,3 +128,22 @@ nearestPitch pc targetMidi =
 nub' :: [Pitch] -> [Pitch]
 nub' [] = []
 nub' (x:xs) = x : nub' (filter (/= x) xs)
+
+smoothVoice :: SmoothMode -> [Pitch] -> [PitchClass] -> [Pitch]
+smoothVoice mode prevPitches nextPCs =
+  let sorted = sortOn pitchToMidi prevPitches
+      prevMidis = map pitchToMidi sorted
+      weights = case mode of
+        SmoothEqual -> [1, 1, 1, 1]
+        SmoothBass  -> [2, 1, 1, 1]
+      perms = permutations nextPCs
+      score perm =
+        let placed = zipWith nearestPitch perm prevMidis
+            placedMidis = map pitchToMidi placed
+            movements = zipWith (\p n -> abs (p - n)) prevMidis placedMidis
+            totalCost = sum $ zipWith (*) weights movements
+            maxMove = maximum movements
+        in (totalCost, maxMove, placed)
+      results = map score perms
+      (_, _, best) = head $ sortOn (\(c, m, _) -> (c, m)) results
+  in best

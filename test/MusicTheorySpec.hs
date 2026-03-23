@@ -67,3 +67,39 @@ spec = describe "MusicTheory" $ do
     it "equidistant tie breaks to lower octave" $
       -- Fs nearest to MIDI 60: Fs3=54 (dist 6), Fs4=66 (dist 6) → Fs3
       nearestPitch Fs 60 `shouldBe` Pitch Fs 3
+
+  describe "smoothVoice" $ do
+    it "identical chord produces no movement" $
+      -- C Major → C Major: prev = [C3, E3, G3, C4], next PCs = [C, E, G, C]
+      let prev = [Pitch C 3, Pitch E 3, Pitch G 3, Pitch C 4]
+          nextPCs = chordPitchClasses C Major
+          result = smoothVoice SmoothEqual prev nextPCs
+      in map pitchToMidi result `shouldBe` [48, 52, 55, 60]
+
+    it "chromatic walk moves each voice 1 half-step" $
+      -- C Major → Db Major: each voice moves up 1
+      let prev = [Pitch C 3, Pitch E 3, Pitch G 3, Pitch C 4]
+          nextPCs = chordPitchClasses Cs Major
+          result = smoothVoice SmoothEqual prev nextPCs
+      in map pitchToMidi result `shouldBe` [49, 53, 56, 61]
+
+    it "keeps common tones in place (C → Am)" $
+      -- C Major [C3,E3,G3,C4] → Am [A,C,E,A]
+      let prev = [Pitch C 3, Pitch E 3, Pitch G 3, Pitch C 4]
+          nextPCs = chordPitchClasses A Minor
+          result = smoothVoice SmoothEqual prev nextPCs
+          resultMidis = map pitchToMidi result
+          totalMovement = sum $ zipWith (\a b -> abs (a - b)) [48,52,55,60] resultMidis
+      in totalMovement `shouldBe` 5
+
+    it "produces exactly 4 notes" $
+      let prev = [Pitch C 3, Pitch E 3, Pitch G 3, Pitch C 4]
+          nextPCs = chordPitchClasses G Dom7
+          result = smoothVoice SmoothEqual prev nextPCs
+      in length result `shouldBe` 4
+
+    it "SmoothBass does not crash" $
+      let prev = [Pitch C 3, Pitch E 3, Pitch G 3, Pitch C 4]
+          nextPCs = chordPitchClasses A Minor
+          result = smoothVoice SmoothBass prev nextPCs
+      in length result `shouldBe` 4
