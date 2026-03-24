@@ -1,7 +1,7 @@
 import type { Pitch, PitchClass, ChordSymbol, SmoothMode, VoiceLeadingOptions } from '../types';
 import { pitchToMidi, nearestPitch, voiceChord, chordPitchClasses } from './musicTheory';
 
-export const GRAVITY_WEIGHT = 0.3;
+export const GRAVITY_WEIGHT = 1.0;
 export const SPREAD_WEIGHT = 2;
 export const DEFAULT_GRAVITY_CENTER = 55;  // G3
 export const DEFAULT_TARGET_SPREAD = 18;   // 1.5 octaves
