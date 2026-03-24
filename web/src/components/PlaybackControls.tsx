@@ -7,6 +7,7 @@ interface PlaybackControlsProps {
   onStop: () => void;
   onPrev: () => void;
   onNext: () => void;
+  onReset: () => void;
   onTempoChange: (tempo: number) => void;
 }
 
@@ -19,6 +20,7 @@ export default function PlaybackControls({
   onStop,
   onPrev,
   onNext,
+  onReset,
   onTempoChange,
 }: PlaybackControlsProps) {
   return (
@@ -26,8 +28,17 @@ export default function PlaybackControls({
       <div className="transport-buttons">
         <button 
           className="control-btn" 
+          onClick={onReset}
+          disabled={totalChords === 0}
+          title="Reset to beginning"
+        >
+          ⏮⏮
+        </button>
+        <button 
+          className="control-btn" 
           onClick={onPrev}
           disabled={totalChords === 0}
+          title="Previous chord (←)"
         >
           ⏮
         </button>
@@ -35,6 +46,7 @@ export default function PlaybackControls({
           className={`play-btn ${isPlaying ? 'playing' : ''}`}
           onClick={isPlaying ? onStop : onPlay}
           disabled={totalChords === 0}
+          title={isPlaying ? 'Stop' : 'Play from current chord'}
         >
           {isPlaying ? '■' : '▶'}
         </button>
@@ -42,6 +54,7 @@ export default function PlaybackControls({
           className="control-btn" 
           onClick={onNext}
           disabled={totalChords === 0}
+          title="Next chord (→)"
         >
           ⏭
         </button>

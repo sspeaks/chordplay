@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { VoiceLeading, PlayStyle, Tuning, ChordSymbol, Pitch, PitchClass } from './types';
 import { parseChordSequence } from './engine/parser';
 import { voiceChordSequence } from './engine/voiceLeading';
@@ -51,21 +51,24 @@ export default function App() {
     const player = new ChordPlayer();
     playerRef.current = player;
     
+    // Start from currently selected chord
+    const startIdx = currentChordIndex;
+    const chordsToPlay = playableChords.slice(startIdx);
+    
     player.playSequence(
-      playableChords,
+      chordsToPlay,
       tempo,
       tuning,
       playStyle,
       (index) => {
         if (playingRef.current) {
-          setCurrentChordIndex(index);
+          setCurrentChordIndex(startIdx + index);
         }
       }
     ).then(() => {
       if (playingRef.current) {
         setIsPlaying(false);
         playingRef.current = false;
-        setCurrentChordIndex(0);
       }
     });
   };
@@ -73,7 +76,6 @@ export default function App() {
   const handleStop = () => {
     playingRef.current = false;
     setIsPlaying(false);
-    setCurrentChordIndex(0);
     if (playerRef.current) {
       playerRef.current.stopCurrent();
       playerRef.current = null;
@@ -88,21 +90,38 @@ export default function App() {
     playerRef.current.playChord(chord.root, pitches, tempo, tuning, playStyle);
   };
 
-  const handlePrev = () => {
+  const handlePrev = useCallback(() => {
     if (currentChordIndex > 0) {
       const newIdx = currentChordIndex - 1;
       setCurrentChordIndex(newIdx);
       playSingleChord(newIdx);
     }
-  };
+  }, [currentChordIndex]);
   
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     if (currentChordIndex < validChords.length - 1) {
       const newIdx = currentChordIndex + 1;
       setCurrentChordIndex(newIdx);
       playSingleChord(newIdx);
     }
+  }, [currentChordIndex, validChords.length]);
+
+  const handleReset = () => {
+    setCurrentChordIndex(0);
+    playSingleChord(0);
   };
+
+  // Arrow key navigation (when textarea not focused)
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'TEXTAREA' || tag === 'INPUT') return;
+      if (e.key === 'ArrowLeft') { e.preventDefault(); handlePrev(); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); handleNext(); }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [handlePrev, handleNext]);
   
   const currentRoot: PitchClass | null = currentChord?.root || null;
   const currentPitches: [Pitch, Pitch, Pitch, Pitch] | null = 
@@ -145,6 +164,7 @@ export default function App() {
         onStop={handleStop}
         onPrev={handlePrev}
         onNext={handleNext}
+        onReset={handleReset}
         onTempoChange={setTempo}
       />
       
