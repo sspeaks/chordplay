@@ -30,6 +30,9 @@ values.
 The research page lives alongside the main app as a separate Vite entry point:
 
 ```
+web/src/engine/
+└── formants.ts           ← formant profiles + computeHarmonics() (new file)
+
 web/src/research/
 ├── ah-sound.html         ← standalone HTML entry
 ├── ah-sound.ts           ← wires up UI + audio
@@ -41,8 +44,10 @@ Vite config gets a second entry in `build.rollupOptions.input` so
 `ah-sound.html` builds alongside the main app. During dev, accessible at
 `http://localhost:5173/src/research/ah-sound.html`.
 
-The synth engine imports formant profiles from the existing
-`engine/formants.ts` as preset starting points.
+**Prerequisite**: `web/src/engine/formants.ts` does not exist yet (it is
+defined in the formant-shaped-synthesis spec but has not been implemented).
+This research page must create it as part of its scope. The synth engine
+imports formant profiles from `engine/formants.ts` as preset starting points.
 
 ### 2. Hybrid Synth Engine (`formantSynth.ts`)
 
@@ -84,6 +89,9 @@ amplitude(n) = spectralTilt(n) × formantEnvelope(f)
 spectralTilt(n) = 1 / n^k   where k is adjustable (default k=1, i.e. -6 dB/oct)
 formantEnvelope(f) = Σ_i  amp[i] × exp(-0.5 × ((f - freq[i]) / bw[i])²)
 ```
+
+`bw` is used as the Gaussian σ (standard deviation) directly. The effective
+−3 dB full-width is approximately `2.355 × bw`.
 
 Harmonics below amplitude threshold (0.001 pre-normalization) are skipped.
 Final amplitudes normalized so the loudest harmonic is 1.0.
@@ -207,6 +215,10 @@ Four preset buttons load the formant profiles from `engine/formants.ts`
 
 ### 8. Testing
 
-This is a research/exploration tool — no automated tests. Validation is by
-ear and visual spectrum inspection. The underlying `computeHarmonics` from
-`engine/formants.ts` already has unit tests.
+This is a research/exploration tool — no automated tests for the research
+page UI itself. Validation is by ear and visual spectrum inspection.
+
+`engine/formants.ts` (created as part of this work) should have unit tests
+for `computeHarmonics` since it will be reused by the main app later. Tests
+live at `web/src/engine/formants.test.ts` and cover: normalization, harmonic
+count limits, formant peak shaping, and voice part differentiation.
