@@ -134,7 +134,6 @@ export default function App() {
         value={chordText}
         onChange={setChordText}
         currentChordIndex={currentChordIndex}
-        isPlaying={isPlaying}
       />
       
       <PlaybackControls

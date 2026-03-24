@@ -4,14 +4,12 @@ interface ChordInputProps {
   value: string;
   onChange: (value: string) => void;
   currentChordIndex: number;
-  isPlaying: boolean;
 }
 
 export default function ChordInput({
   value,
   onChange,
   currentChordIndex,
-  isPlaying,
 }: ChordInputProps) {
   const tokens = value.split(/\s+/).filter(s => s.length > 0);
   const parseResults = parseChordSequence(value);
@@ -33,7 +31,7 @@ export default function ChordInput({
       <div className="chord-input-display">
         {tokens.map((token, idx) => {
           const isValid = validIndices.has(idx);
-          const isActive = isPlaying && isValid && 
+          const isActive = isValid && 
             parseResults.slice(0, idx + 1).filter(r => r.ok).length - 1 === currentChordIndex;
           
           return (
