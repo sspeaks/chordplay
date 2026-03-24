@@ -1,0 +1,127 @@
+import type { ChordSymbol, ChordType, KeySignature, PitchClass } from '../types';
+import { parseChord } from './parser';
+import { parseRomanChord } from './romanParser';
+import { pitchClassToInt } from './musicTheory';
+import {
+  pcToScaleDegree,
+  degreeToRomanUpper,
+  degreeToRomanLower,
+  isSharpKey,
+  pcToStandardName,
+} from './romanNumerals';
+
+function standardQualitySuffix(quality: ChordType): string {
+  const MAP: Record<ChordType, string> = {
+    Major: '', Minor: 'm', Dom7: '7', Maj7: 'maj7', Min7: 'm7',
+    Dim: 'dim', Dim7: 'dim7', Aug: 'aug', HalfDim7: 'm7b5',
+    Sus4: 'sus4', Sus2: 'sus2', MinMaj7: 'mMaj7', Maj6: '6', Min6: 'm6',
+    Dom9: '9',
+  };
+  return MAP[quality];
+}
+
+function romanQualitySuffix(quality: ChordType, isUpper: boolean): string {
+  if (quality === 'Major' && isUpper) return '';
+  if (quality === 'Minor' && !isUpper) return '';
+  return standardQualitySuffix(quality);
+}
+
+function isMajorLike(quality: ChordType): boolean {
+  return quality === 'Major' || quality === 'Dom7' || quality === 'Maj7'
+    || quality === 'Aug' || quality === 'Maj6' || quality === 'Dom9'
+    || quality === 'Sus4' || quality === 'Sus2';
+}
+
+function detectSecondaryDominant(
+  chord: ChordSymbol,
+  nextChord: ChordSymbol | null,
+  key: KeySignature,
+): string | null {
+  if (!nextChord) return null;
+  if (chord.quality !== 'Dom7' && chord.quality !== 'Major') return null;
+
+  const chordRoot = pitchClassToInt(chord.root);
+  const nextRoot = pitchClassToInt(nextChord.root);
+  const interval = ((chordRoot - nextRoot) % 12 + 12) % 12;
+  if (interval !== 7) return null;
+
+  const { degree: chordDeg, accidental: chordAcc } = pcToScaleDegree(key, chord.root);
+  if (chordDeg === 5 && chordAcc === 0) {
+    const { degree: nextDeg, accidental: nextAcc } = pcToScaleDegree(key, nextChord.root);
+    if (nextDeg === 1 && nextAcc === 0) return null;
+  }
+
+  const { degree: targetDeg, accidental: targetAcc } = pcToScaleDegree(key, nextChord.root);
+  const targetUpper = isMajorLike(nextChord.quality);
+  const targetNumeral = targetUpper
+    ? degreeToRomanUpper(targetDeg)
+    : degreeToRomanLower(targetDeg);
+  const accStr = targetAcc === 1 ? '#' : targetAcc === -1 ? 'b' : '';
+  return accStr + targetNumeral;
+}
+
+export function chordTextToRoman(text: string, key: KeySignature): string {
+  if (text.trim() === '') return text;
+
+  const parts = text.split(/(\s+)/);
+  const chordTokens: { index: number; chord: ChordSymbol }[] = [];
+
+  for (let i = 0; i < parts.length; i++) {
+    if (/^\s*$/.test(parts[i]!)) continue;
+    const result = parseChord(parts[i]!);
+    if (result.ok) {
+      chordTokens.push({ index: i, chord: result.value });
+    }
+  }
+
+  return parts.map((part, i) => {
+    if (/^\s*$/.test(part)) return part;
+
+    const result = parseChord(part);
+    if (!result.ok) return part;
+
+    const chord = result.value;
+    const tokenIdx = chordTokens.findIndex(ct => ct.index === i);
+    const nextChord = tokenIdx >= 0 && tokenIdx < chordTokens.length - 1
+      ? chordTokens[tokenIdx + 1]!.chord
+      : null;
+
+    const secDom = detectSecondaryDominant(chord, nextChord, key);
+
+    const { degree, accidental } = pcToScaleDegree(key, chord.root);
+    const upper = isMajorLike(chord.quality);
+    const numeral = upper ? degreeToRomanUpper(degree) : degreeToRomanLower(degree);
+    const accStr = accidental === 1 ? '#' : accidental === -1 ? 'b' : '';
+    const qualSuffix = romanQualitySuffix(chord.quality, upper);
+
+    const invPrefix = chord.inversion !== null ? String(chord.inversion) : '';
+
+    if (secDom) {
+      const secQual = chord.quality === 'Dom7' ? '7' : '';
+      return `${invPrefix}V${secQual}/${secDom}`;
+    }
+
+    return `${invPrefix}${accStr}${numeral}${qualSuffix}`;
+  }).join('');
+}
+
+export function romanTextToStandard(text: string, key: KeySignature): string {
+  if (text.trim() === '') return text;
+
+  const useSharps = isSharpKey(key);
+  const parts = text.split(/(\s+)/);
+
+  return parts.map(part => {
+    if (/^\s*$/.test(part)) return part;
+
+    const result = parseRomanChord(part, key);
+    if (!result.ok) return part;
+
+    const chord = result.value;
+    const rootName = pcToStandardName(chord.root, useSharps);
+    const qualSuffix = standardQualitySuffix(chord.quality);
+    const invPrefix = chord.inversion !== null ? String(chord.inversion) : '';
+
+    return `${invPrefix}${rootName}${qualSuffix}`;
+  }).join('');
+}
