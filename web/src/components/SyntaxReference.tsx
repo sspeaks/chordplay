@@ -5,18 +5,18 @@ interface SyntaxReferenceProps {
 
 const ROOTS = [
   { display: 'C', code: 'C' },
-  { display: 'C♯', code: 'Cs' },
-  { display: 'D♭', code: 'Cs' },
+  { display: 'C♯', code: 'C#' },
+  { display: 'D♭', code: 'Db' },
   { display: 'D', code: 'D' },
-  { display: 'E♭', code: 'Ds' },
+  { display: 'E♭', code: 'Eb' },
   { display: 'E', code: 'E' },
   { display: 'F', code: 'F' },
-  { display: 'F♯', code: 'Fs' },
-  { display: 'G♭', code: 'Fs' },
+  { display: 'F♯', code: 'F#' },
+  { display: 'G♭', code: 'Gb' },
   { display: 'G', code: 'G' },
-  { display: 'A♭', code: 'Gs' },
+  { display: 'A♭', code: 'Ab' },
   { display: 'A', code: 'A' },
-  { display: 'B♭', code: 'As' },
+  { display: 'B♭', code: 'Bb' },
   { display: 'B', code: 'B' },
 ];
 
