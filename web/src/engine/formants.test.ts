@@ -54,19 +54,24 @@ describe('computeHarmonics', () => {
     expect(bassResult.length).toBeGreaterThan(tenorResult.length);
   });
 
-  it('excludes harmonics below amplitude threshold', () => {
-    // At 110 Hz, maxHarmonic = floor(5000/110) = 45
-    // Not all 45 harmonics should survive threshold filtering
-    const f0 = 110;
-    const maxPossible = Math.floor(MAX_HARMONIC_FREQ / f0);
-    const result = computeHarmonics(f0, 'Tenor');
-    expect(result.length).toBeLessThan(maxPossible);
-    expect(result.length).toBeGreaterThan(0);
+  it('amplitude decreases for high harmonics due to glottal rolloff', () => {
+    // With source+filter model, all harmonics get some energy from glottal
+    // source, but amplitude still decreases for very high harmonics
+    const result = computeHarmonics(110, 'Bass');
+    const first = result[0]!;
+    const last = result[result.length - 1]!;
+    expect(last[1]).toBeLessThan(first[1]);
+    // Verify we get harmonics up to the ceiling
+    expect(result.length).toBeGreaterThan(20);
   });
 
-  it('returns empty array when f0 >= MAX_HARMONIC_FREQ', () => {
+  it('returns single harmonic when f0 >= MAX_HARMONIC_FREQ', () => {
+    // At f0=MAX_HARMONIC_FREQ, only h1 exists; glottal source provides
+    // baseline energy even without formant boost
     const result = computeHarmonics(MAX_HARMONIC_FREQ, 'Tenor');
-    expect(result).toEqual([]);
+    expect(result).toHaveLength(1);
+    expect(result[0]![0]).toBe(1);
+    expect(result[0]![1]).toBeCloseTo(1.0);
   });
 
   it('harmonics near F1 are louder than harmonics between formants', () => {

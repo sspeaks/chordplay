@@ -48,6 +48,11 @@ export const AMPLITUDE_THRESHOLD = 0.001;
 
 export type HarmonicAmplitude = [harmonic: number, amplitude: number];
 
+// Formant resonance adds energy ON TOP of the glottal source.
+// formantGain controls how much the formant peaks boost relative to the
+// base glottal spectrum (source × filter model, not source × filter alone).
+const FORMANT_GAIN = 4.0;
+
 function formantEnvelope(freq: number, profile: FormantProfile): number {
   let sum = 0;
   for (const f of profile) {
@@ -57,7 +62,8 @@ function formantEnvelope(freq: number, profile: FormantProfile): number {
   return sum;
 }
 
-function spectralTilt(n: number): number {
+// Glottal source: −6 dB/octave rolloff. Every harmonic gets energy from this.
+function glottalSource(n: number): number {
   return 1 / n;
 }
 
@@ -72,7 +78,10 @@ export function computeHarmonics(
 
   for (let n = 1; n <= maxHarmonic; n++) {
     const freq = n * f0;
-    const amp = spectralTilt(n) * formantEnvelope(freq, profile);
+    const source = glottalSource(n);
+    const formant = formantEnvelope(freq, profile);
+    // Source provides baseline energy; formants boost on top
+    const amp = source * (1 + FORMANT_GAIN * formant);
     if (amp > AMPLITUDE_THRESHOLD) {
       raw.push([n, amp]);
       if (amp > maxAmp) maxAmp = amp;
