@@ -68,8 +68,27 @@ describe('parseRomanChord', () => {
   it('Isus4 in C = C Sus4', () => {
     expectChord('Isus4', Cmaj, { root: 'C', quality: 'Sus4', inversion: null });
   });
-  it('V9 in C = G Dom9', () => {
-    expectChord('V9', Cmaj, { root: 'G', quality: 'Dom9', inversion: null });
+  // 9th chords: bare V9 is invalid, must specify omission
+  it('V9 (bare) fails', () => {
+    expectFail('V9', Cmaj);
+  });
+  it('V9-1 in C = G Dom9no1', () => {
+    expectChord('V9-1', Cmaj, { root: 'G', quality: 'Dom9no1', inversion: null });
+  });
+  it('V9-5 in C = G Dom9no5', () => {
+    expectChord('V9-5', Cmaj, { root: 'G', quality: 'Dom9no5', inversion: null });
+  });
+  it('IVmaj9-3 in C = F Maj9no3', () => {
+    expectChord('IVmaj9-3', Cmaj, { root: 'F', quality: 'Maj9no3', inversion: null });
+  });
+  it('iim9-5 in C = D Min9no5', () => {
+    expectChord('iim9-5', Cmaj, { root: 'D', quality: 'Min9no5', inversion: null });
+  });
+  it('Iadd9 in C = C Dom9no7', () => {
+    expectChord('Iadd9', Cmaj, { root: 'C', quality: 'Dom9no7', inversion: null });
+  });
+  it('iimadd9 in C = D Min9no7', () => {
+    expectChord('iimadd9', Cmaj, { root: 'D', quality: 'Min9no7', inversion: null });
   });
   it('I6 in C = C Maj6', () => {
     expectChord('I6', Cmaj, { root: 'C', quality: 'Maj6', inversion: null });
