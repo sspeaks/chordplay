@@ -11,9 +11,14 @@
       color: #e0e0e0;
       font-family: 'JetBrains Mono', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       padding: 24px;
-      max-width: 840px;
-      margin: 0 auto;
       line-height: 1.6;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 180px;
+      gap: 24px;
+      max-width: 1060px;
+      margin: 0 auto;
     }
     header {
       display: flex;
@@ -140,9 +145,49 @@
       pointer-events: none;
     }
     .help:hover .tip { display: block; }
+    .preset-sidebar {
+      position: sticky;
+      top: 24px;
+      max-height: calc(100vh - 48px);
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #333 #1a1a2e;
+    }
+    .preset-sidebar h2 {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+      margin-top: 0;
+    }
+    .preset-category { margin-bottom: 12px; }
+    .preset-category h3 {
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+    .preset-sidebar button {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 4px 8px;
+      margin-bottom: 2px;
+      font-size: 0.75rem;
+    }
+    .preset-sidebar button.active {
+      background: #4a6fa5;
+      border-color: #4a6fa5;
+    }
   </style>
 </head>
 <body>
+  <div class="layout">
+  <main>
   <header>
     <h1>"Ah" Vowel Research</h1>
     <div class="controls">
@@ -290,11 +335,13 @@
   </section>
 
   <div class="presets">
-    <button id="preset-bass">Bass</button>
-    <button id="preset-bari">Bari</button>
-    <button id="preset-tenor">Tenor</button>
-    <button id="preset-lead">Lead</button>
-    <button id="reset-btn">Reset</button>
+    <button id="reset-btn">Reset All</button>
+  </div>
+  </main>
+
+  <aside class="preset-sidebar" id="preset-sidebar">
+    <h2>Presets</h2>
+  </aside>
   </div>
 
   <script type="module" src="./ah-sound.ts"></script>

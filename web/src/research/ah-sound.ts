@@ -1,7 +1,7 @@
 import { FormantSynth, DEFAULT_PARAMS, type SynthParams } from './formantSynth';
 import { SpectrumAnalyzer } from './spectrumAnalyzer';
-import { VOICE_FORMANTS, type Formant } from '../engine/formants';
-import type { VoicePart } from '../types';
+import { type Formant } from '../engine/formants';
+import { PRESETS, type Preset } from './presets';
 
 let synth: FormantSynth | null = null;
 let analyzer: SpectrumAnalyzer | null = null;
@@ -56,15 +56,28 @@ function updateDisplays(): void {
   }
 }
 
-function loadPreset(voicePart: VoicePart): void {
-  const profile = VOICE_FORMANTS[voicePart];
-  for (let i = 0; i < profile.length; i++) {
-    const f = profile[i]!;
+function applyParams(params: SynthParams): void {
+  el<HTMLInputElement>('f0').value = String(params.f0);
+  el<HTMLInputElement>('tilt').value = String(params.tiltExponent);
+  el<HTMLInputElement>('breath').value = String(params.breathMix);
+  el<HTMLInputElement>('vib-rate').value = String(params.vibratoRate);
+  el<HTMLInputElement>('vib-depth').value = String(params.vibratoDepth * 100);
+  el<HTMLInputElement>('jitter').value = String(params.ampJitter);
+
+  for (let i = 0; i < params.formants.length; i++) {
+    const f = params.formants[i]!;
     el<HTMLInputElement>(`f${i + 1}-freq`).value = String(f.freq);
     el<HTMLInputElement>(`f${i + 1}-amp`).value = String(f.amp);
     el<HTMLInputElement>(`f${i + 1}-bw`).value = String(f.bw);
   }
   onParamChange();
+}
+
+function setActivePreset(btn: HTMLButtonElement): void {
+  document.querySelectorAll('.preset-sidebar button').forEach((b) =>
+    b.classList.remove('active'),
+  );
+  btn.classList.add('active');
 }
 
 function onParamChange(): void {
@@ -123,31 +136,32 @@ for (const id of sliderIds) {
   el<HTMLInputElement>(id).addEventListener('input', onParamChange);
 }
 
-// Presets
-for (const part of ['Bass', 'Bari', 'Tenor', 'Lead'] as const) {
-  el(`preset-${part.toLowerCase()}`).addEventListener('click', () =>
-    loadPreset(part),
-  );
+// Build preset sidebar
+const sidebar = el('preset-sidebar');
+let currentCategory = '';
+for (const preset of PRESETS) {
+  if (preset.category !== currentCategory) {
+    currentCategory = preset.category;
+    const cat = document.createElement('div');
+    cat.className = 'preset-category';
+    cat.innerHTML = `<h3>${currentCategory}</h3>`;
+    sidebar.appendChild(cat);
+  }
+  const btn = document.createElement('button');
+  btn.textContent = preset.name;
+  btn.addEventListener('click', () => {
+    applyParams(preset.params);
+    setActivePreset(btn);
+  });
+  sidebar.lastElementChild!.appendChild(btn);
 }
 
 // Reset
 el('reset-btn').addEventListener('click', () => {
-  el<HTMLInputElement>('f0').value = String(DEFAULT_PARAMS.f0);
-  el<HTMLInputElement>('tilt').value = String(DEFAULT_PARAMS.tiltExponent);
-  el<HTMLInputElement>('breath').value = String(DEFAULT_PARAMS.breathMix);
-  el<HTMLInputElement>('vib-rate').value = String(DEFAULT_PARAMS.vibratoRate);
-  el<HTMLInputElement>('vib-depth').value = String(
-    DEFAULT_PARAMS.vibratoDepth * 100,
+  applyParams(DEFAULT_PARAMS);
+  document.querySelectorAll('.preset-sidebar button').forEach((b) =>
+    b.classList.remove('active'),
   );
-  el<HTMLInputElement>('jitter').value = String(DEFAULT_PARAMS.ampJitter);
-
-  for (let i = 0; i < DEFAULT_PARAMS.formants.length; i++) {
-    const f = DEFAULT_PARAMS.formants[i]!;
-    el<HTMLInputElement>(`f${i + 1}-freq`).value = String(f.freq);
-    el<HTMLInputElement>(`f${i + 1}-amp`).value = String(f.amp);
-    el<HTMLInputElement>(`f${i + 1}-bw`).value = String(f.bw);
-  }
-  onParamChange();
 });
 
 // Initialize display values
