@@ -1,4 +1,3 @@
-import '@fontsource/jetbrains-mono';
 import { FormantSynth, DEFAULT_PARAMS, type SynthParams } from './formantSynth';
 import { SpectrumAnalyzer } from './spectrumAnalyzer';
 import { VOICE_FORMANTS, type Formant } from '../engine/formants';
