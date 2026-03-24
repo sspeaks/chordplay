@@ -142,6 +142,34 @@ describe('justFrequencies', () => {
     expect(freqs[2]).toBeCloseTo(330.0, 0);
     expect(freqs[3]).toBeCloseTo(440.0, 0);
   });
+
+  it('uses septimal 7/4 minor 7th for dominant chords', () => {
+    // G7 = G B D F — dominant quality (has major 3rd)
+    const pitches: Pitch[] = [
+      { pitchClass: 'G', octave: 3 },
+      { pitchClass: 'B', octave: 3 },
+      { pitchClass: 'D', octave: 4 },
+      { pitchClass: 'F', octave: 4 },
+    ];
+    const freqs = justFrequencies('G', pitches);
+    const rootFreq = freqs[0]!;
+    const seventhRatio = freqs[3]! / rootFreq;
+    expect(seventhRatio).toBeCloseTo(7/4, 3);  // septimal 7th
+  });
+
+  it('uses classical 9/5 minor 7th for minor chords', () => {
+    // Em7 = E G B D — minor quality (has minor 3rd, no major 3rd)
+    const pitches: Pitch[] = [
+      { pitchClass: 'E', octave: 3 },
+      { pitchClass: 'G', octave: 3 },
+      { pitchClass: 'B', octave: 3 },
+      { pitchClass: 'D', octave: 4 },
+    ];
+    const freqs = justFrequencies('E', pitches);
+    const rootFreq = freqs[0]!;
+    const seventhRatio = freqs[3]! / rootFreq;
+    expect(seventhRatio).toBeCloseTo(9/5, 3);  // classical minor 7th
+  });
 });
 
 describe('equalFrequencies', () => {

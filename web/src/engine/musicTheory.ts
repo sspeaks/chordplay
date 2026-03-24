@@ -92,9 +92,9 @@ export function nearestPitch(pc: PitchClass, targetMidi: number): Pitch {
 }
 
 // Just intonation ratios — pure harmonic frequency ratios
-function justRatio(semitones: number): number {
-  if (semitones < 0) return justRatio(semitones + 12) / 2.0;
-  if (semitones >= 12) return 2.0 * justRatio(semitones - 12);
+function justRatio(semitones: number, useClassicalMinor7: boolean = false): number {
+  if (semitones < 0) return justRatio(semitones + 12, useClassicalMinor7) / 2.0;
+  if (semitones >= 12) return 2.0 * justRatio(semitones - 12, useClassicalMinor7);
   const ratios: Record<number, number> = {
     0: 1/1,       // unison
     1: 16/15,     // minor 2nd
@@ -106,10 +106,17 @@ function justRatio(semitones: number): number {
     7: 3/2,       // perfect 5th
     8: 8/5,       // minor 6th
     9: 5/3,       // major 6th
-    10: 7/4,      // minor 7th (septimal — the barbershop 7th)
+    10: useClassicalMinor7 ? 9/5 : 7/4,  // 9/5 for minor chords, 7/4 (septimal) for dominant
     11: 15/8,     // major 7th
   };
   return ratios[semitones]!;
+}
+
+// Detect whether a chord has a minor 3rd (interval 3) without a major 3rd (interval 4),
+// indicating a minor-quality chord where 9/5 is the correct minor 7th ratio.
+function hasMinorQuality(intervals: number[]): boolean {
+  const normalized = intervals.map(i => ((i % 12) + 12) % 12);
+  return normalized.includes(3) && !normalized.includes(4);
 }
 
 export function justFrequencies(root: PitchClass, pitches: Pitch[]): number[] {
@@ -119,7 +126,9 @@ export function justFrequencies(root: PitchClass, pitches: Pitch[]): number[] {
   const rootPc = pitchClassToInt(root);
   const rootMidi = bassMidi - (((bassMidi - rootPc) % 12) + 12) % 12;
   const rootFreq = 440.0 * Math.pow(2.0, (rootMidi - 69) / 12.0);
-  return pitches.map(p => rootFreq * justRatio(pitchToMidi(p) - rootMidi));
+  const intervals = midis.map(m => m - rootMidi);
+  const useClassical = hasMinorQuality(intervals);
+  return pitches.map(p => rootFreq * justRatio(pitchToMidi(p) - rootMidi, useClassical));
 }
 
 export function equalFrequencies(pitches: Pitch[]): number[] {
