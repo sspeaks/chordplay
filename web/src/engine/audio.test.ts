@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { envelope, HARMONICS, SAMPLE_RATE } from './audio';
-import { computeHarmonics } from './formants';
 
 describe('envelope', () => {
   it('starts at 0', () => {
@@ -35,18 +34,5 @@ describe('constants', () => {
   });
   it('H7 is boosted to 0.18 for septimal 7th', () => {
     expect(HARMONICS[6]).toEqual([7, 0.18]);
-  });
-});
-
-describe('formant integration', () => {
-  it('computeHarmonics produces more harmonics than static HARMONICS', () => {
-    const formantHarmonics = computeHarmonics(220, 'Bass');
-    expect(formantHarmonics.length).toBeGreaterThan(HARMONICS.length);
-  });
-
-  it('different pitches get different harmonic counts from shared formants', () => {
-    const bass = computeHarmonics(110, 'Bass');
-    const lead = computeHarmonics(330, 'Lead');
-    expect(bass.length).toBeGreaterThan(lead.length);
   });
 });

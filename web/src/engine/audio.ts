@@ -1,7 +1,5 @@
-import type { Pitch, PitchClass, Tuning, PlayStyle, VoicePart } from '../types';
-import { VOICE_PARTS } from '../types';
+import type { Pitch, PitchClass, Tuning, PlayStyle } from '../types';
 import { justFrequencies, equalFrequencies } from './musicTheory';
-import { computeHarmonics } from './formants';
 
 export const SAMPLE_RATE = 44100;
 
@@ -39,7 +37,6 @@ function scheduleChord(
   ctx: BaseAudioContext,
   destination: AudioNode,
   freqs: number[],
-  voiceParts: readonly VoicePart[],
   startTime: number,
   duration: number,
   style: PlayStyle,
@@ -54,10 +51,8 @@ function scheduleChord(
 
   freqs.forEach((baseFreq, voiceIdx) => {
     const voiceOffset = voiceIdx * arpDelay;
-    const voicePart = voiceParts[voiceIdx] ?? 'Lead';
-    const harmonics = computeHarmonics(baseFreq, voicePart);
 
-    for (const [harmonic, amplitude] of harmonics) {
+    for (const [harmonic, amplitude] of HARMONICS) {
       const osc = ctx.createOscillator();
       osc.type = 'sine';
       osc.frequency.value = baseFreq * harmonic;
@@ -129,7 +124,7 @@ export async function renderSequenceOffline(
   let cursor = 0;
   for (let i = 0; i < chordFreqs.length; i++) {
     const freqs = chordFreqs[i]!;
-    scheduleChord(offCtx, offCtx.destination, freqs, VOICE_PARTS, cursor, duration, style);
+    scheduleChord(offCtx, offCtx.destination, freqs, cursor, duration, style);
     cursor += chordDuration(freqs.length, duration, style);
     if (i < chordFreqs.length - 1) {
       cursor += duration * GAP_FACTOR;
@@ -170,7 +165,7 @@ export class ChordPlayer {
       : equalFrequencies(pitches);
 
     const now = ctx.currentTime;
-    this.activeNodes = scheduleChord(ctx, ctx.destination, freqs, VOICE_PARTS, now, duration, style);
+    this.activeNodes = scheduleChord(ctx, ctx.destination, freqs, now, duration, style);
 
     const total = chordDuration(freqs.length, duration, style);
     return new Promise(resolve => {
