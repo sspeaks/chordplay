@@ -105,6 +105,41 @@
       flex-wrap: wrap;
       margin-top: 16px;
     }
+    .help {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      line-height: 14px;
+      text-align: center;
+      font-size: 0.65rem;
+      border-radius: 50%;
+      background: #262638;
+      color: #888;
+      cursor: help;
+      position: relative;
+      margin-left: 4px;
+      vertical-align: middle;
+    }
+    .help:hover { background: #4a6fa5; color: #e0e0e0; }
+    .help .tip {
+      display: none;
+      position: absolute;
+      bottom: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1e1e30;
+      border: 1px solid #4a6fa5;
+      color: #e0e0e0;
+      padding: 8px 10px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      line-height: 1.4;
+      width: 220px;
+      white-space: normal;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .help:hover .tip { display: block; }
   </style>
 </head>
 <body>
@@ -124,32 +159,32 @@
   <section>
     <h2>Global Controls</h2>
     <div class="slider-row">
-      <label>Fundamental</label>
+      <label>Fundamental<span class="help">?<span class="tip">The base pitch frequency (f0). All harmonics are integer multiples of this. 220 Hz = A3, a typical baritone note.</span></span></label>
       <input type="range" id="f0" min="80" max="600" value="220" step="1">
       <span class="value" id="f0-val">220 Hz</span>
     </div>
     <div class="slider-row">
-      <label>Spectral Tilt</label>
+      <label>Spectral Tilt<span class="help">?<span class="tip">How fast upper harmonics roll off. -6 dB/oct (1.0) mimics a natural singing voice. Lower = brighter, higher = darker/warmer.</span></span></label>
       <input type="range" id="tilt" min="0.3" max="2.0" value="1.0" step="0.1">
       <span class="value" id="tilt-val">-6 dB/oct</span>
     </div>
     <div class="slider-row">
-      <label>Breath Mix</label>
+      <label>Breath Mix<span class="help">?<span class="tip">Adds filtered noise at formant frequencies to simulate the airy, breathy quality of a real voice. 0 = pure tone, higher = breathier.</span></span></label>
       <input type="range" id="breath" min="0" max="0.5" value="0.05" step="0.01">
       <span class="value" id="breath-val">0.05</span>
     </div>
     <div class="slider-row">
-      <label>Vibrato Rate</label>
+      <label>Vibrato Rate<span class="help">?<span class="tip">How fast the pitch wobbles, in cycles per second. Natural singing vibrato is typically 5–6 Hz. 0 = no vibrato.</span></span></label>
       <input type="range" id="vib-rate" min="0" max="8" value="5" step="0.1">
       <span class="value" id="vib-rate-val">5.0 Hz</span>
     </div>
     <div class="slider-row">
-      <label>Vibrato Depth</label>
+      <label>Vibrato Depth<span class="help">?<span class="tip">How far the pitch swings during vibrato, as a percentage of the fundamental. 1% on 220 Hz = ±2.2 Hz swing.</span></span></label>
       <input type="range" id="vib-depth" min="0" max="5" value="1" step="0.1">
       <span class="value" id="vib-depth-val">1.0%</span>
     </div>
     <div class="slider-row">
-      <label>Amp Jitter</label>
+      <label>Amp Jitter<span class="help">?<span class="tip">Subtle random-ish volume fluctuations that make the sound feel more organic and alive, like a real voice's micro-variations.</span></span></label>
       <input type="range" id="jitter" min="0" max="0.1" value="0.02" step="0.005">
       <span class="value" id="jitter-val">0.020</span>
     </div>
