@@ -156,6 +156,25 @@ export function justFrequencies(root: PitchClass, pitches: Pitch[]): number[] {
   return pitches.map(p => rootFreq * justRatio(pitchToMidi(p) - rootMidi, useClassical));
 }
 
+const SHARP_NAMES: Record<PitchClass, string> = {
+  C: 'C', Cs: 'C♯', D: 'D', Ds: 'D♯', E: 'E', F: 'F',
+  Fs: 'F♯', G: 'G', Gs: 'G♯', A: 'A', As: 'A♯', B: 'B',
+};
+
+const FLAT_NAMES: Record<PitchClass, string> = {
+  C: 'C', Cs: 'D♭', D: 'D', Ds: 'E♭', E: 'E', F: 'F',
+  Fs: 'G♭', G: 'G', Gs: 'A♭', A: 'A', As: 'B♭', B: 'B',
+};
+
+const ROOT_PREFERS_SHARP: Record<PitchClass, boolean> = {
+  C: false, Cs: false, D: true, Ds: false, E: true, F: false,
+  Fs: true, G: true, Gs: false, A: true, As: false, B: true,
+};
+
+export function displayPitchName(pitchClass: PitchClass, chordRoot: PitchClass): string {
+  return ROOT_PREFERS_SHARP[chordRoot] ? SHARP_NAMES[pitchClass] : FLAT_NAMES[pitchClass];
+}
+
 export function equalFrequencies(pitches: Pitch[]): number[] {
   return pitches.map(pitchFrequency);
 }

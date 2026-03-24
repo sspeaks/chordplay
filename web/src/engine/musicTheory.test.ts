@@ -13,6 +13,7 @@ import {
   midiToPitch,
   hasMinorQuality,
   justRatioLabel,
+  displayPitchName,
 } from './musicTheory';
 import type { Pitch } from '../types';
 
@@ -264,5 +265,29 @@ describe('hasMinorQuality', () => {
 
   it('handles intervals beyond one octave', () => {
     expect(hasMinorQuality([0, 15, 7, 10])).toBe(true);  // 15 % 12 = 3
+  });
+});
+
+describe('displayPitchName', () => {
+  it('sharp-root chords display sharps', () => {
+    expect(displayPitchName('As', 'Fs')).toBe('A♯');
+    expect(displayPitchName('Fs', 'D')).toBe('F♯');
+    expect(displayPitchName('Cs', 'D')).toBe('C♯');
+  });
+
+  it('flat-root chords display flats', () => {
+    expect(displayPitchName('Ds', 'Ds')).toBe('E♭');
+    expect(displayPitchName('Gs', 'Ds')).toBe('A♭');
+    expect(displayPitchName('As', 'Ds')).toBe('B♭');
+  });
+
+  it('C root uses flats (conventional)', () => {
+    expect(displayPitchName('As', 'C')).toBe('B♭');
+    expect(displayPitchName('Ds', 'C')).toBe('E♭');
+  });
+
+  it('natural notes are unaffected by root', () => {
+    expect(displayPitchName('C', 'Fs')).toBe('C');
+    expect(displayPitchName('G', 'Ds')).toBe('G');
   });
 });
