@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ah Vowel Research — ChordPlay</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #12121e;
+      color: #e0e0e0;
+      font-family: 'JetBrains Mono', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      padding: 24px;
+      max-width: 840px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    h1 { font-size: 1.4rem; font-weight: 500; }
+    h2 {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+      margin-top: 20px;
+    }
+    button {
+      background: #1e1e30;
+      color: #e0e0e0;
+      border: 1px solid #333;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.85rem;
+    }
+    button:hover:not(:disabled) { background: #2a2a3e; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .controls { display: flex; gap: 8px; }
+    canvas {
+      width: 100%;
+      background: #1a1a2e;
+      border: 1px solid #262638;
+      border-radius: 4px;
+      margin-bottom: 8px;
+      display: block;
+    }
+    section { margin-bottom: 8px; }
+    .slider-row {
+      display: grid;
+      grid-template-columns: 120px 1fr 80px;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .slider-row label {
+      font-size: 0.8rem;
+      color: #aaa;
+    }
+    .slider-row .value {
+      font-size: 0.8rem;
+      color: #2a9d8f;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 4px;
+      background: #333;
+      border-radius: 2px;
+      outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      background: #4a6fa5;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    .formant-group {
+      background: #1a1a2e;
+      border: 1px solid #262638;
+      border-radius: 4px;
+      padding: 10px 14px;
+      margin-bottom: 6px;
+    }
+    .formant-group h3 {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #4a6fa5;
+      margin-bottom: 6px;
+    }
+    .presets {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>"Ah" Vowel Research</h1>
+    <div class="controls">
+      <button id="play-btn">▶ Play</button>
+      <button id="stop-btn" disabled>⏹ Stop</button>
+    </div>
+  </header>
+
+  <section>
+    <canvas id="spectrum" width="800" height="200"></canvas>
+    <canvas id="waveform" width="800" height="120"></canvas>
+  </section>
+
+  <section>
+    <h2>Global Controls</h2>
+    <div class="slider-row">
+      <label>Fundamental</label>
+      <input type="range" id="f0" min="80" max="600" value="220" step="1">
+      <span class="value" id="f0-val">220 Hz</span>
+    </div>
+    <div class="slider-row">
+      <label>Spectral Tilt</label>
+      <input type="range" id="tilt" min="0.3" max="2.0" value="1.0" step="0.1">
+      <span class="value" id="tilt-val">-6 dB/oct</span>
+    </div>
+    <div class="slider-row">
+      <label>Breath Mix</label>
+      <input type="range" id="breath" min="0" max="0.5" value="0.05" step="0.01">
+      <span class="value" id="breath-val">0.05</span>
+    </div>
+    <div class="slider-row">
+      <label>Vibrato Rate</label>
+      <input type="range" id="vib-rate" min="0" max="8" value="5" step="0.1">
+      <span class="value" id="vib-rate-val">5.0 Hz</span>
+    </div>
+    <div class="slider-row">
+      <label>Vibrato Depth</label>
+      <input type="range" id="vib-depth" min="0" max="5" value="1" step="0.1">
+      <span class="value" id="vib-depth-val">1.0%</span>
+    </div>
+    <div class="slider-row">
+      <label>Amp Jitter</label>
+      <input type="range" id="jitter" min="0" max="0.1" value="0.02" step="0.005">
+      <span class="value" id="jitter-val">0.020</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>Formants</h2>
+
+    <div class="formant-group">
+      <h3>F1</h3>
+      <div class="slider-row">
+        <label>Freq</label>
+        <input type="range" id="f1-freq" min="200" max="1000" value="700" step="10">
+        <span class="value" id="f1-freq-val">700 Hz</span>
+      </div>
+      <div class="slider-row">
+        <label>Amp</label>
+        <input type="range" id="f1-amp" min="0" max="1" value="1.0" step="0.05">
+        <span class="value" id="f1-amp-val">1.00</span>
+      </div>
+      <div class="slider-row">
+        <label>Bandwidth</label>
+        <input type="range" id="f1-bw" min="20" max="400" value="80" step="10">
+        <span class="value" id="f1-bw-val">80 Hz</span>
+      </div>
+    </div>
+
+    <div class="formant-group">
+      <h3>F2</h3>
+      <div class="slider-row">
+        <label>Freq</label>
+        <input type="range" id="f2-freq" min="500" max="2000" value="1150" step="10">
+        <span class="value" id="f2-freq-val">1150 Hz</span>
+      </div>
+      <div class="slider-row">
+        <label>Amp</label>
+        <input type="range" id="f2-amp" min="0" max="1" value="0.7" step="0.05">
+        <span class="value" id="f2-amp-val">0.70</span>
+      </div>
+      <div class="slider-row">
+        <label>Bandwidth</label>
+        <input type="range" id="f2-bw" min="20" max="400" value="90" step="10">
+        <span class="value" id="f2-bw-val">90 Hz</span>
+      </div>
+    </div>
+
+    <div class="formant-group">
+      <h3>F3</h3>
+      <div class="slider-row">
+        <label>Freq</label>
+        <input type="range" id="f3-freq" min="1500" max="3500" value="2500" step="10">
+        <span class="value" id="f3-freq-val">2500 Hz</span>
+      </div>
+      <div class="slider-row">
+        <label>Amp</label>
+        <input type="range" id="f3-amp" min="0" max="1" value="0.65" step="0.05">
+        <span class="value" id="f3-amp-val">0.65</span>
+      </div>
+      <div class="slider-row">
+        <label>Bandwidth</label>
+        <input type="range" id="f3-bw" min="20" max="400" value="120" step="10">
+        <span class="value" id="f3-bw-val">120 Hz</span>
+      </div>
+    </div>
+
+    <div class="formant-group">
+      <h3>F4</h3>
+      <div class="slider-row">
+        <label>Freq</label>
+        <input type="range" id="f4-freq" min="2500" max="4500" value="3350" step="10">
+        <span class="value" id="f4-freq-val">3350 Hz</span>
+      </div>
+      <div class="slider-row">
+        <label>Amp</label>
+        <input type="range" id="f4-amp" min="0" max="1" value="0.45" step="0.05">
+        <span class="value" id="f4-amp-val">0.45</span>
+      </div>
+      <div class="slider-row">
+        <label>Bandwidth</label>
+        <input type="range" id="f4-bw" min="20" max="400" value="150" step="10">
+        <span class="value" id="f4-bw-val">150 Hz</span>
+      </div>
+    </div>
+
+    <div class="formant-group">
+      <h3>F5</h3>
+      <div class="slider-row">
+        <label>Freq</label>
+        <input type="range" id="f5-freq" min="3000" max="5500" value="4200" step="10">
+        <span class="value" id="f5-freq-val">4200 Hz</span>
+      </div>
+      <div class="slider-row">
+        <label>Amp</label>
+        <input type="range" id="f5-amp" min="0" max="1" value="0.2" step="0.05">
+        <span class="value" id="f5-amp-val">0.20</span>
+      </div>
+      <div class="slider-row">
+        <label>Bandwidth</label>
+        <input type="range" id="f5-bw" min="20" max="400" value="200" step="10">
+        <span class="value" id="f5-bw-val">200 Hz</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="presets">
+    <button id="preset-bass">Bass</button>
+    <button id="preset-bari">Bari</button>
+    <button id="preset-tenor">Tenor</button>
+    <button id="preset-lead">Lead</button>
+    <button id="reset-btn">Reset</button>
+  </div>
+
+  <script type="module" src="./ah-sound.ts"></script>
+</body>
+</html>
