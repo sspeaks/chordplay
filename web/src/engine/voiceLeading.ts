@@ -4,7 +4,7 @@ import { pitchToMidi, midiToPitch, nearestPitch, voiceChord, chordPitchClasses, 
 export const GRAVITY_WEIGHT = 1.0;
 export const SPREAD_WEIGHT = 2;
 export const DEFAULT_GRAVITY_CENTER = 55;  // G3
-export const DEFAULT_TARGET_SPREAD = 18;   // 1.5 octaves
+export const DEFAULT_TARGET_SPREAD = 12;   // 1 octave
 
 function permutations<T>(arr: T[]): T[][] {
   if (arr.length <= 1) return [arr];
