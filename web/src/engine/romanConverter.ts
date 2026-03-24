@@ -1,4 +1,4 @@
-import type { ChordSymbol, ChordType, KeySignature, PitchClass } from '../types';
+import type { ChordSymbol, ChordType, KeySignature } from '../types';
 import { parseChord } from './parser';
 import { parseRomanChord } from './romanParser';
 import { pitchClassToInt } from './musicTheory';

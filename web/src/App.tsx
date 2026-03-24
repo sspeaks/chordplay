@@ -1,8 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { VoiceLeading, PlayStyle, Tuning, ChordSymbol, Pitch, PitchClass } from './types';
+import { VoiceLeading, PlayStyle, Tuning, ChordSymbol, Pitch, PitchClass, NotationMode, KeySignature } from './types';
 import { parseChordSequence } from './engine/parser';
+import { parseRomanSequence } from './engine/romanParser';
+import { chordTextToRoman, romanTextToStandard } from './engine/romanConverter';
 import { voiceChordSequence } from './engine/voiceLeading';
-import { ChordPlayer } from './engine/audio';
+import { ChordPlayer, renderSequenceOffline } from './engine/audio';
+import { encodeWav } from './engine/wav';
 import Toolbar from './components/Toolbar';
 import ChordInput from './components/ChordInput';
 import PlaybackControls from './components/PlaybackControls';
@@ -19,11 +22,16 @@ export default function App() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentChordIndex, setCurrentChordIndex] = useState(0);
   const [syntaxHelpOpen, setSyntaxHelpOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [notationMode, setNotationMode] = useState<NotationMode>('standard');
+  const [selectedKey, setSelectedKey] = useState<KeySignature>({ root: 'C', quality: 'major' });
   
   const playerRef = useRef<ChordPlayer | null>(null);
   const playingRef = useRef(false);
   
-  const parseResults = parseChordSequence(chordText);
+  const parseResults = notationMode === 'standard'
+    ? parseChordSequence(chordText)
+    : parseRomanSequence(chordText, selectedKey);
   const validChords: ChordSymbol[] = parseResults
     .filter(r => r.ok)
     .map(r => (r as { ok: true; value: ChordSymbol }).value);
@@ -111,6 +119,41 @@ export default function App() {
     playSingleChord(0);
   };
 
+  const handleExportWav = async () => {
+    if (playableChords.length === 0 || isExporting) return;
+    setIsExporting(true);
+    try {
+      const buffer = await renderSequenceOffline(playableChords, tempo, tuning, playStyle);
+      const blob = encodeWav(buffer);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'chordplay.wav';
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleNotationModeChange = useCallback((newMode: NotationMode) => {
+    if (newMode === notationMode) return;
+    if (newMode === 'roman') {
+      setChordText(chordTextToRoman(chordText, selectedKey));
+    } else {
+      setChordText(romanTextToStandard(chordText, selectedKey));
+    }
+    setNotationMode(newMode);
+  }, [notationMode, chordText, selectedKey]);
+
+  const handleKeyChange = useCallback((newKey: KeySignature) => {
+    if (notationMode === 'roman') {
+      const standard = romanTextToStandard(chordText, selectedKey);
+      setChordText(chordTextToRoman(standard, newKey));
+    }
+    setSelectedKey(newKey);
+  }, [notationMode, chordText, selectedKey]);
+
   // Arrow key navigation (when textarea not focused)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -143,16 +186,25 @@ export default function App() {
         voiceLeading={voiceLeading}
         playStyle={playStyle}
         tuning={tuning}
+        notationMode={notationMode}
+        selectedKey={selectedKey}
         onVoiceLeadingChange={setVoiceLeading}
         onPlayStyleChange={setPlayStyle}
         onTuningChange={setTuning}
+        onNotationModeChange={handleNotationModeChange}
+        onKeyChange={handleKeyChange}
         onToggleSyntaxHelp={() => setSyntaxHelpOpen(!syntaxHelpOpen)}
+        onExportWav={handleExportWav}
+        exportDisabled={validChords.length === 0}
+        isExporting={isExporting}
       />
       
       <ChordInput
         value={chordText}
         onChange={setChordText}
         currentChordIndex={currentChordIndex}
+        isPlaying={isPlaying}
+        parseResults={parseResults}
       />
       
       <PlaybackControls

@@ -1,4 +1,4 @@
-import { PITCH_CLASSES, type PitchClass, type KeySignature } from '../types';
+import { type PitchClass, type KeySignature } from '../types';
 import { pitchClassToInt, pitchClassFromInt } from './musicTheory';
 
 const MAJOR_INTERVALS = [0, 2, 4, 5, 7, 9, 11] as const;

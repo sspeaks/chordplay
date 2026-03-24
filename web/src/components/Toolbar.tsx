@@ -1,13 +1,20 @@
-import { VoiceLeading, PlayStyle, Tuning } from '../types';
+import { VoiceLeading, PlayStyle, Tuning, NotationMode, KeySignature, PitchClass, KeyQuality } from '../types';
 
 interface ToolbarProps {
   voiceLeading: VoiceLeading;
   playStyle: PlayStyle;
   tuning: Tuning;
+  notationMode: NotationMode;
+  selectedKey: KeySignature;
   onVoiceLeadingChange: (mode: VoiceLeading) => void;
   onPlayStyleChange: (style: PlayStyle) => void;
   onTuningChange: (tuning: Tuning) => void;
+  onNotationModeChange: (mode: NotationMode) => void;
+  onKeyChange: (key: KeySignature) => void;
   onToggleSyntaxHelp: () => void;
+  onExportWav: () => void;
+  exportDisabled: boolean;
+  isExporting: boolean;
 }
 
 interface ToggleGroupProps<T extends string> {
@@ -43,17 +50,81 @@ function ToggleGroup<T extends string>({
   );
 }
 
+const KEY_DISPLAY_NAMES: Record<PitchClass, string> = {
+  C: 'C', Cs: 'C♯/D♭', D: 'D', Ds: 'E♭', E: 'E', F: 'F',
+  Fs: 'F♯/G♭', G: 'G', Gs: 'A♭', A: 'A', As: 'B♭', B: 'B',
+};
+
+const KEY_OPTIONS: PitchClass[] = [
+  'C', 'G', 'D', 'A', 'E', 'B', 'Fs', 'Cs', 'F', 'As', 'Ds', 'Gs',
+];
+
+function KeySelector({ selectedKey, onKeyChange }: {
+  selectedKey: KeySignature;
+  onKeyChange: (key: KeySignature) => void;
+}) {
+  const keyValue = `${selectedKey.root}-${selectedKey.quality}`;
+
+  return (
+    <div className="toggle-group">
+      <span className="group-label">Key</span>
+      <select
+        className="key-selector"
+        value={keyValue}
+        onChange={(e) => {
+          const [root, quality] = e.target.value.split('-') as [PitchClass, KeyQuality];
+          onKeyChange({ root, quality });
+        }}
+      >
+        <optgroup label="Major">
+          {KEY_OPTIONS.map(pc => (
+            <option key={`${pc}-major`} value={`${pc}-major`}>
+              {KEY_DISPLAY_NAMES[pc]} major
+            </option>
+          ))}
+        </optgroup>
+        <optgroup label="Minor">
+          {KEY_OPTIONS.map(pc => (
+            <option key={`${pc}-minor`} value={`${pc}-minor`}>
+              {KEY_DISPLAY_NAMES[pc]} minor
+            </option>
+          ))}
+        </optgroup>
+      </select>
+    </div>
+  );
+}
+
 export default function Toolbar({
   voiceLeading,
   playStyle,
   tuning,
+  notationMode,
+  selectedKey,
   onVoiceLeadingChange,
   onPlayStyleChange,
   onTuningChange,
+  onNotationModeChange,
+  onKeyChange,
   onToggleSyntaxHelp,
+  onExportWav,
+  exportDisabled,
+  isExporting,
 }: ToolbarProps) {
   return (
     <div className="toolbar">
+      <ToggleGroup
+        label="Notation"
+        options={['standard', 'roman'] as const}
+        value={notationMode}
+        onChange={onNotationModeChange}
+        labels={{ standard: 'Standard', roman: 'Roman' }}
+      />
+
+      {notationMode === 'roman' && (
+        <KeySelector selectedKey={selectedKey} onKeyChange={onKeyChange} />
+      )}
+
       <ToggleGroup
         label="Voice Leading"
         options={['off', 'smooth', 'bass'] as const}
@@ -80,6 +151,15 @@ export default function Toolbar({
       
       <button className="syntax-help-btn" onClick={onToggleSyntaxHelp}>
         Syntax Help
+      </button>
+      
+      <button
+        className="syntax-help-btn"
+        onClick={onExportWav}
+        disabled={exportDisabled || isExporting}
+        title="Export chord sequence as WAV file"
+      >
+        {isExporting ? 'Exporting…' : 'Export WAV'}
       </button>
     </div>
   );

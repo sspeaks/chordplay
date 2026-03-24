@@ -1,21 +1,44 @@
-import { useMemo } from 'react';
-import { parseChordSequence } from '../engine/parser';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import type { ParseResult, ChordSymbol } from '../types';
 
 interface ChordInputProps {
   value: string;
   onChange: (value: string) => void;
   currentChordIndex: number;
+  isPlaying: boolean;
+  parseResults: ParseResult<ChordSymbol>[];
 }
 
 export default function ChordInput({
   value,
   onChange,
   currentChordIndex,
+  isPlaying,
+  parseResults,
 }: ChordInputProps) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const displayRef = useRef<HTMLDivElement>(null);
+  const [isFocused, setIsFocused] = useState(false);
+
+  const showOverlay = isPlaying || !isFocused;
+
+  const handleScroll = useCallback((e: React.UIEvent<HTMLTextAreaElement>) => {
+    if (displayRef.current) {
+      displayRef.current.scrollTop = e.currentTarget.scrollTop;
+      displayRef.current.scrollLeft = e.currentTarget.scrollLeft;
+    }
+  }, []);
+
+  const displayCallbackRef = useCallback((node: HTMLDivElement | null) => {
+    (displayRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+    if (node && textareaRef.current) {
+      node.scrollTop = textareaRef.current.scrollTop;
+      node.scrollLeft = textareaRef.current.scrollLeft;
+    }
+  }, []);
+
   const segments = useMemo(() => {
-    // Split preserving whitespace as separate segments
     const parts = value.split(/(\s+)/);
-    const parseResults = parseChordSequence(value);
     let chordIdx = 0;
 
     return parts.map(part => {
@@ -31,29 +54,36 @@ export default function ChordInput({
       chordIdx++;
       return { text: part, isChord: true, isValid, validIndex };
     });
-  }, [value]);
+  }, [value, parseResults]);
 
   return (
-    <div className="chord-input-container">
+    <div className={`chord-input-container${showOverlay ? ' playing' : ''}`}>
       <textarea
+        ref={textareaRef}
         className="chord-input-textarea"
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onScroll={handleScroll}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
         placeholder="Enter chord symbols (e.g., D A7 G Gm D)"
         spellCheck={false}
+        readOnly={isPlaying}
       />
-      <div className="chord-input-display" aria-hidden="true">
-        {segments.map((seg, i) => {
-          if (!seg.isChord) return <span key={i}>{seg.text}</span>;
-          const isActive = seg.validIndex === currentChordIndex;
-          const cls = [
-            'chord-token',
-            isActive ? 'chord-active' : '',
-            !seg.isValid ? 'chord-invalid' : '',
-          ].filter(Boolean).join(' ');
-          return <span key={i} className={cls}>{seg.text}</span>;
-        })}
-      </div>
+      {showOverlay && (
+        <div className="chord-input-display" ref={displayCallbackRef} aria-hidden="true">
+          {segments.map((seg, i) => {
+            if (!seg.isChord) return <span key={i}>{seg.text}</span>;
+            const isActive = seg.validIndex === currentChordIndex;
+            const cls = [
+              'chord-token',
+              isActive ? 'chord-active' : '',
+              !seg.isValid ? 'chord-invalid' : '',
+            ].filter(Boolean).join(' ');
+            return <span key={i} className={cls}>{seg.text}</span>;
+          })}
+        </div>
+      )}
     </div>
   );
 }

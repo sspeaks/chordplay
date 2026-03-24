@@ -9,7 +9,6 @@ import type { KeySignature } from '../types';
 
 const Dmaj: KeySignature = { root: 'D', quality: 'major' };
 const Cmaj: KeySignature = { root: 'C', quality: 'major' };
-const Amaj: KeySignature = { root: 'A', quality: 'major' };
 const Amin: KeySignature = { root: 'A', quality: 'minor' };
 const Fmaj: KeySignature = { root: 'F', quality: 'major' };
 const Fsmaj: KeySignature = { root: 'Fs', quality: 'major' };

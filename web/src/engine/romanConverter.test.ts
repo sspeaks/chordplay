@@ -1,12 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { chordTextToRoman, romanTextToStandard } from './romanConverter';
 import { parseChordSequence } from './parser';
-import { parseRomanSequence } from './romanParser';
 import type { KeySignature } from '../types';
 
 const Cmaj: KeySignature = { root: 'C', quality: 'major' };
 const Dmaj: KeySignature = { root: 'D', quality: 'major' };
-const Amaj: KeySignature = { root: 'A', quality: 'major' };
 const Amin: KeySignature = { root: 'A', quality: 'minor' };
 
 describe('chordTextToRoman', () => {
