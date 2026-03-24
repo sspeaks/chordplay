@@ -15,13 +15,13 @@ describe('VOICE_FORMANTS', () => {
     }
   });
 
-  it('Bass has lower F1 than Tenor', () => {
-    expect(VOICE_FORMANTS.Bass[0]!.freq).toBeLessThan(VOICE_FORMANTS.Tenor[0]!.freq);
+  it('all voices share the same formant profile', () => {
+    expect(VOICE_FORMANTS.Bass).toBe(VOICE_FORMANTS.Tenor);
+    expect(VOICE_FORMANTS.Bari).toBe(VOICE_FORMANTS.Lead);
   });
 
-  it('Lead has brighter F3/F4 than Tenor', () => {
-    expect(VOICE_FORMANTS.Lead[2]!.amp).toBeGreaterThan(VOICE_FORMANTS.Tenor[2]!.amp);
-    expect(VOICE_FORMANTS.Lead[3]!.amp).toBeGreaterThan(VOICE_FORMANTS.Tenor[3]!.amp);
+  it('F1 is centered around 700 Hz for ah vowel', () => {
+    expect(VOICE_FORMANTS.Bass[0]!.freq).toBe(700);
   });
 });
 
@@ -84,18 +84,12 @@ describe('computeHarmonics', () => {
     expect(h6![1]).toBeGreaterThan(h8![1]);
   });
 
-  it('different voice parts produce different amplitudes', () => {
-    const bass = computeHarmonics(220, 'Bass');
-    const lead = computeHarmonics(220, 'Lead');
-    const bassMap = new Map(bass);
-    const leadMap = new Map(lead);
-    let hasDifference = false;
-    for (const [h] of bass) {
-      if (leadMap.has(h) && Math.abs(bassMap.get(h)! - leadMap.get(h)!) > 0.01) {
-        hasDifference = true;
-        break;
-      }
-    }
-    expect(hasDifference).toBe(true);
+  it('different pitches produce different harmonic shapes from same formants', () => {
+    // Even with shared formants, a bass at 110Hz and tenor at 220Hz
+    // hit the formant peaks at different harmonic numbers
+    const bass = computeHarmonics(110, 'Bass');
+    const tenor = computeHarmonics(220, 'Tenor');
+    // Bass should have more harmonics (lower f0 = more fit under ceiling)
+    expect(bass.length).toBeGreaterThan(tenor.length);
   });
 });

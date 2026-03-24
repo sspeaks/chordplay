@@ -44,18 +44,9 @@ describe('formant integration', () => {
     expect(formantHarmonics.length).toBeGreaterThan(HARMONICS.length);
   });
 
-  it('different voices produce different amplitudes at same frequency', () => {
-    const bass = computeHarmonics(220, 'Bass');
-    const lead = computeHarmonics(220, 'Lead');
-    const bassMap = new Map(bass);
-    const leadMap = new Map(lead);
-    let hasDifference = false;
-    for (const [h] of bass) {
-      if (leadMap.has(h) && Math.abs(bassMap.get(h)! - leadMap.get(h)!) > 0.01) {
-        hasDifference = true;
-        break;
-      }
-    }
-    expect(hasDifference).toBe(true);
+  it('different pitches get different harmonic counts from shared formants', () => {
+    const bass = computeHarmonics(110, 'Bass');
+    const lead = computeHarmonics(330, 'Lead');
+    expect(bass.length).toBeGreaterThan(lead.length);
   });
 });
