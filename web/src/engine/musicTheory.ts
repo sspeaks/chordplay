@@ -125,3 +125,11 @@ export function justFrequencies(root: PitchClass, pitches: Pitch[]): number[] {
 export function equalFrequencies(pitches: Pitch[]): number[] {
   return pitches.map(pitchFrequency);
 }
+
+const MIDI_NOTE_NAMES = ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
+
+export function midiToNoteName(midi: number): string {
+  const pc = ((midi % 12) + 12) % 12;
+  const octave = Math.floor(midi / 12) - 1;
+  return `${MIDI_NOTE_NAMES[pc]}${octave}`;
+}

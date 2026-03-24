@@ -1,5 +1,10 @@
-import type { Pitch, PitchClass, ChordSymbol, SmoothMode } from '../types';
+import type { Pitch, PitchClass, ChordSymbol, SmoothMode, VoiceLeadingOptions } from '../types';
 import { pitchToMidi, nearestPitch, voiceChord, chordPitchClasses } from './musicTheory';
+
+export const GRAVITY_STRENGTH = 0.3;
+export const SPREAD_WEIGHT = 2;
+export const DEFAULT_GRAVITY_CENTER = 55;  // G3
+export const DEFAULT_TARGET_SPREAD = 18;   // 1.5 octaves
 
 function permutations<T>(arr: T[]): T[][] {
   if (arr.length <= 1) return [arr];
@@ -13,10 +18,21 @@ function permutations<T>(arr: T[]): T[][] {
   return result;
 }
 
-export function smoothVoice(mode: SmoothMode, prevPitches: Pitch[], nextPCs: PitchClass[]): Pitch[] {
+export function smoothVoice(
+  mode: SmoothMode,
+  prevPitches: Pitch[],
+  nextPCs: PitchClass[],
+  options?: VoiceLeadingOptions,
+): Pitch[] {
+  const { gravityCenter = DEFAULT_GRAVITY_CENTER, targetSpread = DEFAULT_TARGET_SPREAD } = options ?? {};
+
   const sorted = [...prevPitches].sort((a, b) => pitchToMidi(a) - pitchToMidi(b));
   const prevMidis = sorted.map(pitchToMidi);
   const weights = mode === 'bass' ? [2, 1, 1, 1] : [1, 1, 1, 1];
+
+  const biasedTargets = prevMidis.map(pm =>
+    Math.round(pm * (1 - GRAVITY_STRENGTH) + gravityCenter * GRAVITY_STRENGTH)
+  );
 
   const perms = permutations(nextPCs);
 
@@ -25,7 +41,7 @@ export function smoothVoice(mode: SmoothMode, prevPitches: Pitch[], nextPCs: Pit
   let bestPlaced: Pitch[] = sorted;
 
   for (const perm of perms) {
-    const placed = perm.map((pc, i) => nearestPitch(pc, prevMidis[i]!));
+    const placed = perm.map((pc, i) => nearestPitch(pc, biasedTargets[i]!));
     const placedMidis = placed.map(pitchToMidi);
     const movements = prevMidis.map((pm, i) => Math.abs(pm - placedMidis[i]!));
     const totalCost = movements.reduce((sum, m, i) => sum + m * weights[i]!, 0);
@@ -35,7 +51,10 @@ export function smoothVoice(mode: SmoothMode, prevPitches: Pitch[], nextPCs: Pit
     const gaps = sortedMidis.slice(1).map((m, i) => m - sortedMidis[i]!);
     const clusterPenalty = 12 * gaps.filter(g => g === 1).length;
 
-    const cost = totalCost + clusterPenalty;
+    const actualSpread = sortedMidis[sortedMidis.length - 1]! - sortedMidis[0]!;
+    const spreadPenalty = SPREAD_WEIGHT * Math.abs(actualSpread - targetSpread);
+
+    const cost = totalCost + clusterPenalty + spreadPenalty;
 
     if (cost < bestCost || (cost === bestCost && maxMove < bestMax)) {
       bestCost = cost;
@@ -47,7 +66,11 @@ export function smoothVoice(mode: SmoothMode, prevPitches: Pitch[], nextPCs: Pit
   return bestPlaced;
 }
 
-export function voiceChordSequence(mode: SmoothMode | null, chords: ChordSymbol[]): Pitch[][] {
+export function voiceChordSequence(
+  mode: SmoothMode | null,
+  chords: ChordSymbol[],
+  options?: VoiceLeadingOptions,
+): Pitch[][] {
   if (chords.length === 0) return [];
 
   if (mode === null) {
@@ -65,7 +88,7 @@ export function voiceChordSequence(mode: SmoothMode | null, chords: ChordSymbol[
     if (chord.inversion !== null) {
       voicing = voiceChord(chord.root, chord.quality, chord.inversion);
     } else {
-      voicing = smoothVoice(mode, prev, chordPitchClasses(chord.root, chord.quality));
+      voicing = smoothVoice(mode, prev, chordPitchClasses(chord.root, chord.quality), options);
     }
     result.push(voicing);
     prev = voicing;

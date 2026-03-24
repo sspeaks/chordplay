@@ -43,3 +43,8 @@ export interface KeySignature {
   readonly root: PitchClass;
   readonly quality: KeyQuality;
 }
+
+export interface VoiceLeadingOptions {
+  readonly gravityCenter?: number;   // MIDI note number (default: 55 = G3)
+  readonly targetSpread?: number;    // semitones (default: 18 = 1.5 octaves)
+}
