@@ -43,7 +43,7 @@ export const VOICE_FORMANTS: Record<VoicePart, FormantProfile> = {
   ],
 };
 
-export const MAX_HARMONIC_FREQ = 5000;
+export const MAX_HARMONIC_FREQ = 2200;
 export const AMPLITUDE_THRESHOLD = 0.001;
 
 export type HarmonicAmplitude = [harmonic: number, amplitude: number];
