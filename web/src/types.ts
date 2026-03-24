@@ -35,3 +35,11 @@ export type ParseResult<T> =
 // Voice part labels for visualization
 export const VOICE_PARTS = ['Bass', 'Bari', 'Tenor', 'Lead'] as const;
 export type VoicePart = typeof VOICE_PARTS[number];
+
+export type NotationMode = 'standard' | 'roman';
+export type KeyQuality = 'major' | 'minor';
+
+export interface KeySignature {
+  readonly root: PitchClass;
+  readonly quality: KeyQuality;
+}

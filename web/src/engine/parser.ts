@@ -73,7 +73,7 @@ function resolveRoot(letter: string, accidental: string | null): PitchClass | nu
 
 // Quality parser — order matters! Try longest/most specific first.
 // Matches the Haskell parser's try ordering exactly.
-function parseQuality(s: string): ChordType | null {
+export function parseQuality(s: string): ChordType | null {
   const QUALITIES: [string, ChordType][] = [
     ['mMaj7', 'MinMaj7'],
     ['maj7', 'Maj7'],
