@@ -1,5 +1,5 @@
 import type { Pitch, PitchClass, ChordSymbol, SmoothMode, VoiceLeadingOptions } from '../types';
-import { pitchToMidi, midiToPitch, nearestPitch, voiceChord, chordPitchClasses, pitchClassToInt, chordIntervals } from './musicTheory';
+import { pitchToMidi, midiToPitch, nearestPitch, voiceChord, chordPitchClasses, pitchClassToInt} from './musicTheory';
 
 export const GRAVITY_WEIGHT = 1.0;
 export const SPREAD_WEIGHT = 2;
@@ -27,7 +27,7 @@ function nearestTwoPitches(pc: PitchClass, targetMidi: number, gravityCenter: nu
   const octLow = Math.floor(octFloat);
   const octHigh = Math.ceil(octFloat);
   const midiLow = (octLow + 1) * 12 + pcInt;
-  const midiHigh = (octHigh + 1) * 12 + pcInt;
+ //const midiHigh = (octHigh + 1) * 12 + pcInt;
 
   const nearest = nearestPitch(pc, targetMidi);
   const nearestMidi = pitchToMidi(nearest);

@@ -1,7 +1,7 @@
 import { FormantSynth, DEFAULT_PARAMS, type SynthParams } from './formantSynth';
 import { SpectrumAnalyzer } from './spectrumAnalyzer';
 import { type Formant } from '../engine/formants';
-import { PRESETS, type Preset } from './presets';
+import { PRESETS } from './presets';
 
 let synth: FormantSynth | null = null;
 let analyzer: SpectrumAnalyzer | null = null;
