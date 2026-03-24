@@ -93,9 +93,13 @@ When formatting Roman numerals for display (in the chord overlay and NoteCards),
 - `♯` instead of `#` for sharps
 - `°` for diminished (when quality is `Dim` or `Dim7`)
 
+### Enharmonic spelling in `romanTextToStandard`
+
+When converting Roman → standard, the output spelling (e.g. `D#` vs `E♭`) should follow the key context: sharp keys (G, D, A, E, B, F♯) produce sharp spellings; flat keys (F, B♭, E♭, A♭, D♭, G♭) produce flat spellings. C major defaults to flats for consistency with existing `DISPLAY_NAMES`. Minor keys follow their relative major's convention.
+
 ### Roundtrip invariant
 
-`standard → roman → standard` must produce an equivalent chord sequence. This is a key property for testing. Note: enharmonic spelling may normalize (e.g. `Db` and `C#` map to the same `PitchClass`), so equivalence is at the `ChordSymbol` level, not necessarily string-identical.
+`standard → roman → standard` must produce an equivalent chord sequence. This is a key property for testing. Equivalence is at the `ChordSymbol` level (same `PitchClass`, `ChordType`, `inversion`), not necessarily string-identical — enharmonic respelling (e.g. `Db` → `C#`) is acceptable as long as the parsed result is the same.
 
 ## Quality suffix formatting
 
@@ -193,7 +197,8 @@ New files:
 Modified files:
 - `web/src/types.ts` — add `NotationMode`, `KeyQuality`, `KeySignature`
 - `web/src/engine/parser.ts` — extract `parseQuality()` as a named export
-- `web/src/App.tsx` — add state, parser routing, mode toggle handler, key change handler
+- `web/src/App.tsx` — add state, parser routing, mode toggle handler, key change handler; pass `parseResults` to `ChordInput` instead of having it parse independently
+- `web/src/components/ChordInput.tsx` — accept pre-parsed `ParseResult[]` via props instead of calling `parseChordSequence()` internally, so it works correctly in both notation modes
 - `web/src/components/Toolbar.tsx` — add notation mode toggle and key selector dropdown
 
 ## Testing Strategy
