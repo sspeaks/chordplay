@@ -24,7 +24,7 @@ steps:
   
 - task: CopyFilesOverSSH@0
   inputs:
-    sshEndpoint: 'Blog Connect'
+    sshEndpoint: 'sspeaks.net Connect'
     sourceFolder: 'dist'
     contents: '**'
     targetFolder: '/usr/share/caddy3'
