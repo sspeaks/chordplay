@@ -1,0 +1,153 @@
+import { describe, it, expect } from 'vitest';
+import { parseRomanChord, parseRomanSequence } from './romanParser';
+import type { ChordSymbol, KeySignature } from '../types';
+
+const Cmaj: KeySignature = { root: 'C', quality: 'major' };
+const Dmaj: KeySignature = { root: 'D', quality: 'major' };
+const Amin: KeySignature = { root: 'A', quality: 'minor' };
+
+function expectChord(input: string, key: KeySignature, expected: ChordSymbol) {
+  const result = parseRomanChord(input, key);
+  expect(result.ok, `Expected '${input}' to parse OK but got: ${result.ok ? '' : result.error}`).toBe(true);
+  if (result.ok) {
+    expect(result.value).toEqual(expected);
+  }
+}
+
+function expectFail(input: string, key: KeySignature) {
+  const result = parseRomanChord(input, key);
+  expect(result.ok).toBe(false);
+}
+
+describe('parseRomanChord', () => {
+  it('I in C = C Major', () => {
+    expectChord('I', Cmaj, { root: 'C', quality: 'Major', inversion: null });
+  });
+  it('ii in C = D Minor', () => {
+    expectChord('ii', Cmaj, { root: 'D', quality: 'Minor', inversion: null });
+  });
+  it('iii in C = E Minor', () => {
+    expectChord('iii', Cmaj, { root: 'E', quality: 'Minor', inversion: null });
+  });
+  it('IV in C = F Major', () => {
+    expectChord('IV', Cmaj, { root: 'F', quality: 'Major', inversion: null });
+  });
+  it('V in C = G Major', () => {
+    expectChord('V', Cmaj, { root: 'G', quality: 'Major', inversion: null });
+  });
+  it('vi in C = A Minor', () => {
+    expectChord('vi', Cmaj, { root: 'A', quality: 'Minor', inversion: null });
+  });
+  it('VII in C = B Major', () => {
+    expectChord('VII', Cmaj, { root: 'B', quality: 'Major', inversion: null });
+  });
+  it('V7 in C = G Dom7', () => {
+    expectChord('V7', Cmaj, { root: 'G', quality: 'Dom7', inversion: null });
+  });
+  it('IVmaj7 in C = F Maj7', () => {
+    expectChord('IVmaj7', Cmaj, { root: 'F', quality: 'Maj7', inversion: null });
+  });
+  it('ii7 in C = D Dom7 (suffix overrides case)', () => {
+    expectChord('ii7', Cmaj, { root: 'D', quality: 'Dom7', inversion: null });
+  });
+  it('iim7 in C = D Min7', () => {
+    expectChord('iim7', Cmaj, { root: 'D', quality: 'Min7', inversion: null });
+  });
+  it('viidim in C = B Dim', () => {
+    expectChord('viidim', Cmaj, { root: 'B', quality: 'Dim', inversion: null });
+  });
+  it('viidim7 in C = B Dim7', () => {
+    expectChord('viidim7', Cmaj, { root: 'B', quality: 'Dim7', inversion: null });
+  });
+  it('viim7b5 in C = B HalfDim7', () => {
+    expectChord('viim7b5', Cmaj, { root: 'B', quality: 'HalfDim7', inversion: null });
+  });
+  it('III+ in C = E Aug', () => {
+    expectChord('III+', Cmaj, { root: 'E', quality: 'Aug', inversion: null });
+  });
+  it('Isus4 in C = C Sus4', () => {
+    expectChord('Isus4', Cmaj, { root: 'C', quality: 'Sus4', inversion: null });
+  });
+  it('V9 in C = G Dom9', () => {
+    expectChord('V9', Cmaj, { root: 'G', quality: 'Dom9', inversion: null });
+  });
+  it('I6 in C = C Maj6', () => {
+    expectChord('I6', Cmaj, { root: 'C', quality: 'Maj6', inversion: null });
+  });
+  it('bVII in C = Bb Major', () => {
+    expectChord('bVII', Cmaj, { root: 'As', quality: 'Major', inversion: null });
+  });
+  it('bVII7 in C = Bb Dom7', () => {
+    expectChord('bVII7', Cmaj, { root: 'As', quality: 'Dom7', inversion: null });
+  });
+  it('#IV in C = F# Major', () => {
+    expectChord('#IV', Cmaj, { root: 'Fs', quality: 'Major', inversion: null });
+  });
+  it('bIII in C = Eb Major', () => {
+    expectChord('bIII', Cmaj, { root: 'Ds', quality: 'Major', inversion: null });
+  });
+  it('I in D = D Major', () => {
+    expectChord('I', Dmaj, { root: 'D', quality: 'Major', inversion: null });
+  });
+  it('V7 in D = A Dom7', () => {
+    expectChord('V7', Dmaj, { root: 'A', quality: 'Dom7', inversion: null });
+  });
+  it('vi in D = B Minor', () => {
+    expectChord('vi', Dmaj, { root: 'B', quality: 'Minor', inversion: null });
+  });
+  it('i in A minor = A Minor', () => {
+    expectChord('i', Amin, { root: 'A', quality: 'Minor', inversion: null });
+  });
+  it('III in A minor = C Major', () => {
+    expectChord('III', Amin, { root: 'C', quality: 'Major', inversion: null });
+  });
+  it('V7 in A minor = E Dom7', () => {
+    expectChord('V7', Amin, { root: 'E', quality: 'Dom7', inversion: null });
+  });
+  it('V7/V in C = D7 (dominant of G)', () => {
+    expectChord('V7/V', Cmaj, { root: 'D', quality: 'Dom7', inversion: null });
+  });
+  it('V7/ii in C = A7 (dominant of Dm=D)', () => {
+    expectChord('V7/ii', Cmaj, { root: 'A', quality: 'Dom7', inversion: null });
+  });
+  it('V7/vi in D = F#7 (dominant of Bm=B)', () => {
+    expectChord('V7/vi', Dmaj, { root: 'Fs', quality: 'Dom7', inversion: null });
+  });
+  it('V/IV in C = C Major (dominant of F)', () => {
+    expectChord('V/IV', Cmaj, { root: 'C', quality: 'Major', inversion: null });
+  });
+  it('1V7 in C = G Dom7, inversion 1', () => {
+    expectChord('1V7', Cmaj, { root: 'G', quality: 'Dom7', inversion: 1 });
+  });
+  it('-1IV in C = F Major, inversion -1', () => {
+    expectChord('-1IV', Cmaj, { root: 'F', quality: 'Major', inversion: -1 });
+  });
+  it('empty string fails', () => {
+    expectFail('', Cmaj);
+  });
+  it('invalid numeral fails', () => {
+    expectFail('X7', Cmaj);
+  });
+  it('invalid quality suffix fails', () => {
+    expectFail('Ixyz', Cmaj);
+  });
+});
+
+describe('parseRomanSequence', () => {
+  it('parses space-separated Roman numerals', () => {
+    const result = parseRomanSequence('I V7 vi IV', Cmaj);
+    expect(result).toHaveLength(4);
+    expect(result.every(r => r.ok)).toBe(true);
+  });
+  it('marks invalid tokens as errors', () => {
+    const result = parseRomanSequence('I XYZ V', Cmaj);
+    expect(result).toHaveLength(3);
+    expect(result[0]!.ok).toBe(true);
+    expect(result[1]!.ok).toBe(false);
+    expect(result[2]!.ok).toBe(true);
+  });
+  it('handles empty input', () => {
+    const result = parseRomanSequence('', Cmaj);
+    expect(result).toHaveLength(0);
+  });
+});
