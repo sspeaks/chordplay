@@ -8,5 +8,8 @@ pkgs.haskellPackages.shellFor {
   nativeBuildInputs = with pkgs.haskellPackages; [
     haskell-language-server
     cabal-install
-  ] ++ [ pkgs.pulseaudio ];
+  ] ++ [ pkgs.pulseaudio pkgs.nodejs ];
+  shellHook = ''
+    export PATH="$PWD/web/node_modules/.bin:$PATH"
+  '';
 }
