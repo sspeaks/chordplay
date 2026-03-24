@@ -31,6 +31,109 @@ export function envelope(duration: number, t: number): number {
   return 0.0;
 }
 
+// Schedule oscillators for a single chord onto the given AudioContext.
+// Returns the created oscillator and gain nodes.
+function scheduleChord(
+  ctx: BaseAudioContext,
+  destination: AudioNode,
+  freqs: number[],
+  startTime: number,
+  duration: number,
+  style: PlayStyle,
+): { oscillators: OscillatorNode[]; gains: GainNode[] } {
+  const oscillators: OscillatorNode[] = [];
+  const gains: GainNode[] = [];
+  const masterGain = ctx.createGain();
+  masterGain.gain.value = 0.3 / freqs.length;
+  masterGain.connect(destination);
+
+  const arpDelay = style === 'arpeggio' ? 0.080 : 0;
+
+  freqs.forEach((baseFreq, voiceIdx) => {
+    const voiceOffset = voiceIdx * arpDelay;
+
+    for (const [harmonic, amplitude] of HARMONICS) {
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = baseFreq * harmonic;
+
+      const gain = ctx.createGain();
+      gain.gain.value = 0;
+
+      const start = startTime + voiceOffset;
+      const attackEnd = start + ATTACK;
+      const decayEnd = attackEnd + DECAY;
+      const releaseStart = start + duration - RELEASE;
+      const end = start + duration;
+
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(amplitude, attackEnd);
+      gain.gain.linearRampToValueAtTime(amplitude * SUSTAIN, decayEnd);
+      gain.gain.setValueAtTime(amplitude * SUSTAIN, releaseStart);
+      gain.gain.linearRampToValueAtTime(0, end);
+
+      osc.connect(gain);
+      gain.connect(masterGain);
+
+      osc.start(start);
+      osc.stop(end + 0.01);
+
+      oscillators.push(osc);
+      gains.push(gain);
+    }
+  });
+
+  return { oscillators, gains };
+}
+
+// Compute the total wall-clock duration of a single chord (including arpeggio spread).
+function chordDuration(numVoices: number, duration: number, style: PlayStyle): number {
+  const arpDelay = style === 'arpeggio' ? 0.080 : 0;
+  return duration + (numVoices - 1) * arpDelay;
+}
+
+// Inter-chord gap: 8% of chord duration (matches playSequence behaviour).
+const GAP_FACTOR = 0.080;
+
+// Render the full chord sequence offline and return the resulting AudioBuffer.
+export async function renderSequenceOffline(
+  chords: { root: PitchClass; pitches: Pitch[] }[],
+  duration: number,
+  tuning: Tuning,
+  style: PlayStyle,
+): Promise<AudioBuffer> {
+  // Pre-compute frequencies and total length
+  const chordFreqs = chords.map(c =>
+    tuning === 'just'
+      ? justFrequencies(c.root, c.pitches)
+      : equalFrequencies(c.pitches),
+  );
+
+  let totalSeconds = 0;
+  for (let i = 0; i < chordFreqs.length; i++) {
+    totalSeconds += chordDuration(chordFreqs[i]!.length, duration, style);
+    if (i < chordFreqs.length - 1) {
+      totalSeconds += duration * GAP_FACTOR;
+    }
+  }
+  // Small tail to let the last release finish
+  totalSeconds += RELEASE;
+
+  const offCtx = new OfflineAudioContext(1, Math.ceil(totalSeconds * SAMPLE_RATE), SAMPLE_RATE);
+
+  let cursor = 0;
+  for (let i = 0; i < chordFreqs.length; i++) {
+    const freqs = chordFreqs[i]!;
+    scheduleChord(offCtx, offCtx.destination, freqs, cursor, duration, style);
+    cursor += chordDuration(freqs.length, duration, style);
+    if (i < chordFreqs.length - 1) {
+      cursor += duration * GAP_FACTOR;
+    }
+  }
+
+  return offCtx.startRendering();
+}
+
 // Manages Web Audio playback for chord voicings
 export class ChordPlayer {
   private ctx: AudioContext | null = null;
@@ -61,52 +164,10 @@ export class ChordPlayer {
       ? justFrequencies(root, pitches)
       : equalFrequencies(pitches);
 
-    const oscillators: OscillatorNode[] = [];
-    const gains: GainNode[] = [];
-    const masterGain = ctx.createGain();
-    masterGain.gain.value = 0.3 / freqs.length;
-    masterGain.connect(ctx.destination);
-
     const now = ctx.currentTime;
-    const arpDelay = style === 'arpeggio' ? 0.080 : 0;
+    this.activeNodes = scheduleChord(ctx, ctx.destination, freqs, now, duration, style);
 
-    freqs.forEach((baseFreq, voiceIdx) => {
-      const voiceOffset = voiceIdx * arpDelay;
-
-      for (const [harmonic, amplitude] of HARMONICS) {
-        const osc = ctx.createOscillator();
-        osc.type = 'sine';
-        osc.frequency.value = baseFreq * harmonic;
-
-        const gain = ctx.createGain();
-        gain.gain.value = 0;
-
-        const start = now + voiceOffset;
-        const attackEnd = start + ATTACK;
-        const decayEnd = attackEnd + DECAY;
-        const releaseStart = start + duration - RELEASE;
-        const end = start + duration;
-
-        gain.gain.setValueAtTime(0, start);
-        gain.gain.linearRampToValueAtTime(amplitude, attackEnd);
-        gain.gain.linearRampToValueAtTime(amplitude * SUSTAIN, decayEnd);
-        gain.gain.setValueAtTime(amplitude * SUSTAIN, releaseStart);
-        gain.gain.linearRampToValueAtTime(0, end);
-
-        osc.connect(gain);
-        gain.connect(masterGain);
-
-        osc.start(start);
-        osc.stop(end + 0.01);
-
-        oscillators.push(osc);
-        gains.push(gain);
-      }
-    });
-
-    this.activeNodes = { oscillators, gains };
-
-    const totalDuration = duration + (freqs.length - 1) * arpDelay;
+    const total = chordDuration(freqs.length, duration, style);
     return new Promise(resolve => {
       this.playbackResolve = resolve;
       this.playbackTimer = window.setTimeout(() => {
@@ -114,7 +175,7 @@ export class ChordPlayer {
         this.playbackTimer = null;
         this.playbackResolve = null;
         resolve();
-      }, totalDuration * 1000);
+      }, total * 1000);
     });
   }
 

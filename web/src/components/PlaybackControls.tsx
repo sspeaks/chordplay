@@ -32,7 +32,7 @@ export default function PlaybackControls({
           disabled={totalChords === 0}
           title="Reset to beginning"
         >
-          ⏮⏮
+          ◀◀
         </button>
         <button 
           className="control-btn" 
@@ -40,7 +40,7 @@ export default function PlaybackControls({
           disabled={totalChords === 0}
           title="Previous chord (←)"
         >
-          ⏮
+          ◀
         </button>
         <button 
           className={`play-btn ${isPlaying ? 'playing' : ''}`}
@@ -56,7 +56,7 @@ export default function PlaybackControls({
           disabled={totalChords === 0}
           title="Next chord (→)"
         >
-          ⏭
+          ▶
         </button>
       </div>
       
