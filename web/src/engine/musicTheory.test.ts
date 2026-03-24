@@ -73,8 +73,46 @@ describe('chordIntervals', () => {
   it('HalfDim7 = [0,3,6,10]', () => {
     expect(chordIntervals('HalfDim7')).toEqual([0, 3, 6, 10]);
   });
-  it('Dom9 = [-5,2,4,10] (rootless)', () => {
-    expect(chordIntervals('Dom9')).toEqual([-5, 2, 4, 10]);
+  // Dominant 9th variants (full = [0,4,7,10,14])
+  it('Dom9no1 = [4,7,10,14]', () => {
+    expect(chordIntervals('Dom9no1')).toEqual([4, 7, 10, 14]);
+  });
+  it('Dom9no3 = [0,7,10,14]', () => {
+    expect(chordIntervals('Dom9no3')).toEqual([0, 7, 10, 14]);
+  });
+  it('Dom9no5 = [0,4,10,14]', () => {
+    expect(chordIntervals('Dom9no5')).toEqual([0, 4, 10, 14]);
+  });
+  it('Dom9no7 = [0,4,7,14]', () => {
+    expect(chordIntervals('Dom9no7')).toEqual([0, 4, 7, 14]);
+  });
+
+  // Major 9th variants (full = [0,4,7,11,14])
+  it('Maj9no1 = [4,7,11,14]', () => {
+    expect(chordIntervals('Maj9no1')).toEqual([4, 7, 11, 14]);
+  });
+  it('Maj9no3 = [0,7,11,14]', () => {
+    expect(chordIntervals('Maj9no3')).toEqual([0, 7, 11, 14]);
+  });
+  it('Maj9no5 = [0,4,11,14]', () => {
+    expect(chordIntervals('Maj9no5')).toEqual([0, 4, 11, 14]);
+  });
+  it('Maj9no7 = [0,4,7,14]', () => {
+    expect(chordIntervals('Maj9no7')).toEqual([0, 4, 7, 14]);
+  });
+
+  // Minor 9th variants (full = [0,3,7,10,14])
+  it('Min9no1 = [3,7,10,14]', () => {
+    expect(chordIntervals('Min9no1')).toEqual([3, 7, 10, 14]);
+  });
+  it('Min9no3 = [0,7,10,14]', () => {
+    expect(chordIntervals('Min9no3')).toEqual([0, 7, 10, 14]);
+  });
+  it('Min9no5 = [0,3,10,14]', () => {
+    expect(chordIntervals('Min9no5')).toEqual([0, 3, 10, 14]);
+  });
+  it('Min9no7 = [0,3,7,14]', () => {
+    expect(chordIntervals('Min9no7')).toEqual([0, 3, 7, 14]);
   });
 });
 

@@ -39,7 +39,21 @@ const INTERVALS: Record<ChordType, readonly number[]> = {
   MinMaj7:  [0, 3, 7, 11],
   Maj6:     [0, 4, 7, 9],
   Min6:     [0, 3, 7, 9],
-  Dom9:     [-5, 2, 4, 10],  // rootless: 5, 9, 3, b7
+  // Dominant 9th (full: 1,3,5,b7,9 = [0,4,7,10,14])
+  Dom9no1:  [4, 7, 10, 14],
+  Dom9no3:  [0, 7, 10, 14],
+  Dom9no5:  [0, 4, 10, 14],
+  Dom9no7:  [0, 4, 7, 14],
+  // Major 9th (full: 1,3,5,7,9 = [0,4,7,11,14])
+  Maj9no1:  [4, 7, 11, 14],
+  Maj9no3:  [0, 7, 11, 14],
+  Maj9no5:  [0, 4, 11, 14],
+  Maj9no7:  [0, 4, 7, 14],
+  // Minor 9th (full: 1,b3,5,b7,9 = [0,3,7,10,14])
+  Min9no1:  [3, 7, 10, 14],
+  Min9no3:  [0, 7, 10, 14],
+  Min9no5:  [0, 3, 10, 14],
+  Min9no7:  [0, 3, 7, 14],
 };
 
 export function chordIntervals(ct: ChordType): readonly number[] {
