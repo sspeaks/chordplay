@@ -47,6 +47,6 @@ export interface KeySignature {
 }
 
 export interface VoiceLeadingOptions {
-  readonly gravityCenter?: number;   // MIDI note number (default: 55 = G3)
+  readonly gravityCenter?: number;   // MIDI note number (default: 60 = C4)
   readonly targetSpread?: number;    // semitones (default: 18 = 1.5 octaves)
 }

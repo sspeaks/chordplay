@@ -17,8 +17,8 @@ export default function App() {
   const [chordText, setChordText] = useState('Cmaj7 Am7 Dm7 G7 Em7 A7 Dm7 G7 Cmaj7 C7 Fmaj7 Fm6 Cmaj7 Am7 Dm7 G7 Cmaj7');
   const [voiceLeading, setVoiceLeading] = useState<VoiceLeading>('smooth');
   const [playStyle, setPlayStyle] = useState<PlayStyle>('block');
-  const [tuning, setTuning] = useState<Tuning>('just');
-  const [tempo, setTempo] = useState(1.2);
+  const [tuning, setTuning] = useState<Tuning>('equal');
+  const [tempo, setTempo] = useState(0.8);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentChordIndex, setCurrentChordIndex] = useState(0);
   const [syntaxHelpOpen, setSyntaxHelpOpen] = useState(false);
