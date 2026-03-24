@@ -52,9 +52,9 @@ No changes needed — `romanParser.ts` delegates to `parseQuality()`, so `V9-5`,
 
 Replace the `Dom 9 (rootless)` entry in QUALITIES with a brief description of the 9th chord omission system rather than listing all 12 variants.
 
-### Data file update (`myRomance.txt`)
+### Data file update
 
-`A9` becomes `A9-1` (or another valid variant) since bare 9ths are no longer valid.
+The default chord progression was updated separately (myRomance.txt removed, replaced with jazzy Happy Birthday). No 9th-chord-specific data file changes needed.
 
 ## Files changed
 
@@ -63,7 +63,7 @@ Replace the `Dom 9 (rootless)` entry in QUALITIES with a brief description of th
 - `web/src/engine/parser.ts` — Update `parseQuality` entries
 - `web/src/engine/romanConverter.ts` — Update `standardQualitySuffix` MAP and `isMajorLike`
 - `web/src/components/SyntaxReference.tsx` — Update QUALITIES display
-- `myRomance.txt` — Fix bare 9th chord
+- `myRomance.txt` — Removed (default progression updated separately)
 - `web/src/engine/parser.test.ts` — Update and add parser tests
 - `web/src/engine/musicTheory.test.ts` — Update and add interval tests
 - `web/src/engine/romanParser.test.ts` — Update roman numeral 9th chord tests
@@ -76,4 +76,4 @@ Replace the `Dom 9 (rootless)` entry in QUALITIES with a brief description of th
 - Roman numeral variants (`V9-5`, `ii9-1`) parse correctly
 - Bare roman `V9` returns parse error
 - All 12 interval sets are correct
-- `myRomance.txt` integration test passes with updated content
+- Default progression integration test passes with updated content

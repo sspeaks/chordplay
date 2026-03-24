@@ -66,7 +66,7 @@ export default function ChordInput({
         onScroll={handleScroll}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
-        placeholder="Enter chord symbols (e.g., D A7 G Gm D)"
+        placeholder="Enter chord symbols (e.g., Cmaj7 Am7 Dm7 G7)"
         spellCheck={false}
         readOnly={isPlaying}
       />

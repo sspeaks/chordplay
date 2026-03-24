@@ -101,9 +101,9 @@ describe('parseChordSequence', () => {
     const result = parseChordSequence('');
     expect(result).toHaveLength(0);
   });
-  it('handles myRomance.txt content', () => {
-    const result = parseChordSequence('D A7 A9 D D7 Ab7 G6 Gm6 D F#7');
-    expect(result).toHaveLength(10);
+  it('handles jazzy Happy Birthday progression', () => {
+    const result = parseChordSequence('Cmaj7 Am7 Dm7 G7 Em7 A7 Dm7 G7 Cmaj7 C7 Fmaj7 Fm6 Cmaj7 Am7 Dm7 G7 Cmaj7');
+    expect(result).toHaveLength(17);
     expect(result.every(r => r.ok)).toBe(true);
   });
 });

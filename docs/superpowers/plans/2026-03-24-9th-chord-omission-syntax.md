@@ -414,54 +414,9 @@ git commit -m "feat: update romanConverter for 9th chord omission types"
 
 ---
 
-### Task 5: Update myRomance.txt and integration test
+### Task 5: Integration test (no changes needed)
 
-**Files:**
-- Modify: `myRomance.txt`
-- Modify: `web/src/engine/parser.test.ts:104-108`
-
-- [ ] **Step 1: Update myRomance.txt**
-
-Change `A9` to `A9-1` in `myRomance.txt`. The file should read:
-
-```
-D A7 A9-1 D D7 Ab7 G6 Gm6 D F#7
-```
-
-- [ ] **Step 2: Update the integration test**
-
-In `web/src/engine/parser.test.ts`, replace:
-
-```typescript
-  it('handles myRomance.txt content', () => {
-    const result = parseChordSequence('D A7 A9 D D7 Ab7 G6 Gm6 D F#7');
-    expect(result).toHaveLength(10);
-    expect(result.every(r => r.ok)).toBe(true);
-  });
-```
-
-with:
-
-```typescript
-  it('handles myRomance.txt content', () => {
-    const result = parseChordSequence('D A7 A9-1 D D7 Ab7 G6 Gm6 D F#7');
-    expect(result).toHaveLength(10);
-    expect(result.every(r => r.ok)).toBe(true);
-  });
-```
-
-- [ ] **Step 3: Run tests to verify they pass**
-
-Run: `cd web && npx vitest run src/engine/parser.test.ts 2>&1 | tail -20`
-
-Expected: ALL PASS
-
-- [ ] **Step 4: Commit**
-
-```bash
-git add myRomance.txt web/src/engine/parser.test.ts
-git commit -m "fix: update myRomance.txt A9 → A9-1 for new 9th chord syntax"
-```
+The default progression was changed to a jazzy Happy Birthday (`Cmaj7 Am7 Dm7 G7 ...`) which has no 9th chords, so the integration test doesn't need 9th chord updates. Skip to Task 6.
 
 ---
 
