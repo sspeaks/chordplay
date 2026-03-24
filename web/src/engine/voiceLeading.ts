@@ -1,7 +1,7 @@
 import type { Pitch, PitchClass, ChordSymbol, SmoothMode, VoiceLeadingOptions } from '../types';
 import { pitchToMidi, nearestPitch, voiceChord, chordPitchClasses } from './musicTheory';
 
-export const GRAVITY_STRENGTH = 0.3;
+export const GRAVITY_WEIGHT = 0.3;
 export const SPREAD_WEIGHT = 2;
 export const DEFAULT_GRAVITY_CENTER = 55;  // G3
 export const DEFAULT_TARGET_SPREAD = 18;   // 1.5 octaves
@@ -30,10 +30,6 @@ export function smoothVoice(
   const prevMidis = sorted.map(pitchToMidi);
   const weights = mode === 'bass' ? [2, 1, 1, 1] : [1, 1, 1, 1];
 
-  const biasedTargets = prevMidis.map(pm =>
-    Math.round(pm * (1 - GRAVITY_STRENGTH) + gravityCenter * GRAVITY_STRENGTH)
-  );
-
   const perms = permutations(nextPCs);
 
   let bestCost = Infinity;
@@ -41,7 +37,7 @@ export function smoothVoice(
   let bestPlaced: Pitch[] = sorted;
 
   for (const perm of perms) {
-    const placed = perm.map((pc, i) => nearestPitch(pc, biasedTargets[i]!));
+    const placed = perm.map((pc, i) => nearestPitch(pc, prevMidis[i]!));
     const placedMidis = placed.map(pitchToMidi);
     const movements = prevMidis.map((pm, i) => Math.abs(pm - placedMidis[i]!));
     const totalCost = movements.reduce((sum, m, i) => sum + m * weights[i]!, 0);
@@ -54,7 +50,10 @@ export function smoothVoice(
     const actualSpread = sortedMidis[sortedMidis.length - 1]! - sortedMidis[0]!;
     const spreadPenalty = SPREAD_WEIGHT * Math.abs(actualSpread - targetSpread);
 
-    const cost = totalCost + clusterPenalty + spreadPenalty;
+    const centroid = placedMidis.reduce((a, b) => a + b, 0) / placedMidis.length;
+    const gravityPenalty = GRAVITY_WEIGHT * Math.abs(centroid - gravityCenter);
+
+    const cost = totalCost + clusterPenalty + spreadPenalty + gravityPenalty;
 
     if (cost < bestCost || (cost === bestCost && maxMove < bestMax)) {
       bestCost = cost;

@@ -80,12 +80,12 @@ describe('voiceChordSequence', () => {
 describe('smoothVoice with gravity/spread', () => {
   it('gravity pulls voicing toward center', () => {
     const highPrev: Pitch[] = [
-      { pitchClass: 'C', octave: 5 },
-      { pitchClass: 'E', octave: 5 },
+      { pitchClass: 'As', octave: 4 },
+      { pitchClass: 'Ds', octave: 5 },
       { pitchClass: 'G', octave: 5 },
-      { pitchClass: 'C', octave: 6 },
+      { pitchClass: 'As', octave: 5 },
     ];
-    const nextPCs: PitchClass[] = ['F', 'A', 'C', 'F'];
+    const nextPCs: PitchClass[] = ['C', 'E', 'G', 'C'];
     const withGravity = smoothVoice('equal', highPrev, nextPCs, { gravityCenter: 55 });
     const withoutGravity = smoothVoice('equal', highPrev, nextPCs, { gravityCenter: 84 });
     const gravityCentroid = withGravity.map(pitchToMidi).reduce((a, b) => a + b, 0) / 4;
