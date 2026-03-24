@@ -14,29 +14,29 @@ export type FormantProfile = readonly Formant[];
 // Lead gets extra F3/F4 boost for brighter projection.
 export const VOICE_FORMANTS: Record<VoicePart, FormantProfile> = {
   Bass: [
-    { freq: 650,  amp: 1.0,  bw: 80  },
-    { freq: 1100, amp: 0.7,  bw: 90  },
+    { freq: 650,  amp: 1.0,  bw: 200 },
+    { freq: 1100, amp: 0.7,  bw: 120 },
     { freq: 2450, amp: 0.65, bw: 120 },
     { freq: 3300, amp: 0.45, bw: 150 },
     { freq: 4100, amp: 0.2,  bw: 200 },
   ],
   Bari: [
-    { freq: 700,  amp: 1.0,  bw: 80  },
-    { freq: 1150, amp: 0.7,  bw: 90  },
+    { freq: 700,  amp: 1.0,  bw: 200 },
+    { freq: 1150, amp: 0.7,  bw: 120 },
     { freq: 2500, amp: 0.65, bw: 120 },
     { freq: 3350, amp: 0.45, bw: 150 },
     { freq: 4200, amp: 0.2,  bw: 200 },
   ],
   Tenor: [
-    { freq: 750,  amp: 1.0,  bw: 80  },
-    { freq: 1200, amp: 0.7,  bw: 90  },
+    { freq: 750,  amp: 1.0,  bw: 200 },
+    { freq: 1200, amp: 0.7,  bw: 120 },
     { freq: 2550, amp: 0.65, bw: 120 },
     { freq: 3400, amp: 0.45, bw: 150 },
     { freq: 4300, amp: 0.2,  bw: 200 },
   ],
   Lead: [
-    { freq: 750,  amp: 1.0,  bw: 80  },
-    { freq: 1200, amp: 0.7,  bw: 90  },
+    { freq: 750,  amp: 1.0,  bw: 200 },
+    { freq: 1200, amp: 0.7,  bw: 120 },
     { freq: 2550, amp: 0.75, bw: 120 },
     { freq: 3400, amp: 0.55, bw: 150 },
     { freq: 4300, amp: 0.2,  bw: 200 },
@@ -48,10 +48,12 @@ export const AMPLITUDE_THRESHOLD = 0.001;
 
 export type HarmonicAmplitude = [harmonic: number, amplitude: number];
 
-// Formant resonance adds energy ON TOP of the glottal source.
-// formantGain controls how much the formant peaks boost relative to the
-// base glottal spectrum (source × filter model, not source × filter alone).
-const FORMANT_GAIN = 4.0;
+// Source×filter model: glottal source provides a quiet baseline at every
+// harmonic; formant resonances boost selected regions on top.
+// GLOTTAL_FLOOR controls the baseline level between formant peaks.
+// Lower = cleaner/more vowel-shaped; higher = richer but noisier.
+const GLOTTAL_FLOOR = 0.15;
+const FORMANT_GAIN = 8.0;
 
 function formantEnvelope(freq: number, profile: FormantProfile): number {
   let sum = 0;
@@ -80,8 +82,9 @@ export function computeHarmonics(
     const freq = n * f0;
     const source = glottalSource(n);
     const formant = formantEnvelope(freq, profile);
-    // Source provides baseline energy; formants boost on top
-    const amp = source * (1 + FORMANT_GAIN * formant);
+    // Quiet glottal baseline + formant boost gives ~50:1 peak-to-valley
+    // contrast (~34 dB), matching real vocal tract resonance depth
+    const amp = source * (GLOTTAL_FLOOR + FORMANT_GAIN * formant);
     if (amp > AMPLITUDE_THRESHOLD) {
       raw.push([n, amp]);
       if (amp > maxAmp) maxAmp = amp;
