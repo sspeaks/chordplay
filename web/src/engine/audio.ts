@@ -53,7 +53,7 @@ export class ChordPlayer {
     tuning: Tuning,
     style: PlayStyle,
   ): Promise<void> {
-    this.stopCurrent();
+    this.clearAudio();
     const ctx = this.getContext();
     if (ctx.state === 'suspended') await ctx.resume();
 
@@ -138,11 +138,15 @@ export class ChordPlayer {
 
   stopCurrent(): void {
     this.stopped = true;
+    this.clearAudio();
+  }
+
+  // Stops current audio nodes without setting the stopped flag
+  private clearAudio(): void {
     if (this.playbackTimer !== null) {
       window.clearTimeout(this.playbackTimer);
       this.playbackTimer = null;
     }
-    // Resolve the pending promise so playSequence can continue/exit
     if (this.playbackResolve) {
       this.playbackResolve();
       this.playbackResolve = null;
