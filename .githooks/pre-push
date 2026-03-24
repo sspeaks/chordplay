@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -e
+
+echo "🔨 Running web build check before push..."
+
+cd "$(git rev-parse --show-toplevel)/web"
+
+npm run build --silent
+echo "✅ Web build succeeded."
+
+npm test --silent
+echo "✅ Web tests passed."
+
+echo "🚀 Push allowed."
