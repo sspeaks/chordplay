@@ -612,6 +612,17 @@ body {
   min-width: 200px;
 }
 
+.voice-leading-advanced summary {
+  cursor: pointer;
+  color: #888;
+  font-size: 0.85rem;
+  user-select: none;
+}
+
+.voice-leading-advanced summary:hover {
+  color: #e0e0e0;
+}
+
 .slider-label {
   display: flex;
   align-items: center;

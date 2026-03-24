@@ -143,32 +143,35 @@ export default function Toolbar({
       />
 
       {(voiceLeading === 'smooth' || voiceLeading === 'bass') && (
-        <div className="voice-leading-options">
-          <label className="slider-label">
-            <span className="slider-name">Gravity</span>
-            <input
-              type="range"
-              min={36}
-              max={72}
-              value={gravityCenter}
-              onChange={e => onGravityCenterChange(Number(e.target.value))}
-              className="vl-slider"
-            />
-            <span className="slider-value">{midiToNoteName(gravityCenter)}</span>
-          </label>
-          <label className="slider-label">
-            <span className="slider-name">Spread</span>
-            <input
-              type="range"
-              min={12}
-              max={36}
-              value={targetSpread}
-              onChange={e => onTargetSpreadChange(Number(e.target.value))}
-              className="vl-slider"
-            />
-            <span className="slider-value">{(targetSpread / 12).toFixed(1)} oct</span>
-          </label>
-        </div>
+        <details className="voice-leading-advanced">
+          <summary>Advanced</summary>
+          <div className="voice-leading-options">
+            <label className="slider-label">
+              <span className="slider-name">Gravity</span>
+              <input
+                type="range"
+                min={36}
+                max={72}
+                value={gravityCenter}
+                onChange={e => onGravityCenterChange(Number(e.target.value))}
+                className="vl-slider"
+              />
+              <span className="slider-value">{midiToNoteName(gravityCenter)}</span>
+            </label>
+            <label className="slider-label">
+              <span className="slider-name">Spread</span>
+              <input
+                type="range"
+                min={12}
+                max={36}
+                value={targetSpread}
+                onChange={e => onTargetSpreadChange(Number(e.target.value))}
+                className="vl-slider"
+              />
+              <span className="slider-value">{(targetSpread / 12).toFixed(1)} oct</span>
+            </label>
+          </div>
+        </details>
       )}
       
       <ToggleGroup
