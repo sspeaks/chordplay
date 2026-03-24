@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { VoiceLeading, PlayStyle, Tuning, ChordSymbol, Pitch, PitchClass, NotationMode, KeySignature } from './types';
+import { VoiceLeading, PlayStyle, Tuning, ChordSymbol, Pitch, PitchClass, NotationMode, KeySignature, VoiceLeadingOptions } from './types';
 import { parseChordSequence } from './engine/parser';
 import { parseRomanSequence } from './engine/romanParser';
 import { chordTextToRoman, romanTextToStandard } from './engine/romanConverter';
-import { voiceChordSequence } from './engine/voiceLeading';
+import { voiceChordSequence, DEFAULT_GRAVITY_CENTER, DEFAULT_TARGET_SPREAD } from './engine/voiceLeading';
 import { ChordPlayer, renderSequenceOffline } from './engine/audio';
 import { encodeWav } from './engine/wav';
 import Toolbar from './components/Toolbar';
@@ -15,7 +15,7 @@ import SyntaxReference from './components/SyntaxReference';
 
 export default function App() {
   const [chordText, setChordText] = useState('D A7 A9 D D7 Ab7 G6 Gm6 D F#7');
-  const [voiceLeading, setVoiceLeading] = useState<VoiceLeading>('off');
+  const [voiceLeading, setVoiceLeading] = useState<VoiceLeading>('smooth');
   const [playStyle, setPlayStyle] = useState<PlayStyle>('block');
   const [tuning, setTuning] = useState<Tuning>('just');
   const [tempo, setTempo] = useState(1.2);
@@ -25,6 +25,8 @@ export default function App() {
   const [isExporting, setIsExporting] = useState(false);
   const [notationMode, setNotationMode] = useState<NotationMode>('standard');
   const [selectedKey, setSelectedKey] = useState<KeySignature>({ root: 'C', quality: 'major' });
+  const [gravityCenter, setGravityCenter] = useState(DEFAULT_GRAVITY_CENTER);
+  const [targetSpread, setTargetSpread] = useState(DEFAULT_TARGET_SPREAD);
   
   const playerRef = useRef<ChordPlayer | null>(null);
   const playingRef = useRef(false);
@@ -37,8 +39,9 @@ export default function App() {
     .map(r => (r as { ok: true; value: ChordSymbol }).value);
   
   const smoothMode = voiceLeading === 'smooth' ? 'equal' : voiceLeading === 'bass' ? 'bass' : null;
+  const voiceLeadingOptions: VoiceLeadingOptions = { gravityCenter, targetSpread };
   const voicings = validChords.length > 0 
-    ? voiceChordSequence(smoothMode, validChords) 
+    ? voiceChordSequence(smoothMode, validChords, voiceLeadingOptions) 
     : [];
   
   const currentVoicing = voicings[currentChordIndex] || null;
@@ -188,11 +191,15 @@ export default function App() {
         tuning={tuning}
         notationMode={notationMode}
         selectedKey={selectedKey}
+        gravityCenter={gravityCenter}
+        targetSpread={targetSpread}
         onVoiceLeadingChange={setVoiceLeading}
         onPlayStyleChange={setPlayStyle}
         onTuningChange={setTuning}
         onNotationModeChange={handleNotationModeChange}
         onKeyChange={handleKeyChange}
+        onGravityCenterChange={setGravityCenter}
+        onTargetSpreadChange={setTargetSpread}
         onToggleSyntaxHelp={() => setSyntaxHelpOpen(!syntaxHelpOpen)}
         onExportWav={handleExportWav}
         exportDisabled={validChords.length === 0}

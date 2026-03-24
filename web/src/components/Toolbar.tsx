@@ -1,4 +1,5 @@
 import { VoiceLeading, PlayStyle, Tuning, NotationMode, KeySignature, PitchClass, KeyQuality } from '../types';
+import { midiToNoteName } from '../engine/musicTheory';
 
 interface ToolbarProps {
   voiceLeading: VoiceLeading;
@@ -15,6 +16,10 @@ interface ToolbarProps {
   onExportWav: () => void;
   exportDisabled: boolean;
   isExporting: boolean;
+  gravityCenter: number;
+  targetSpread: number;
+  onGravityCenterChange: (value: number) => void;
+  onTargetSpreadChange: (value: number) => void;
 }
 
 interface ToggleGroupProps<T extends string> {
@@ -110,6 +115,10 @@ export default function Toolbar({
   onExportWav,
   exportDisabled,
   isExporting,
+  gravityCenter,
+  targetSpread,
+  onGravityCenterChange,
+  onTargetSpreadChange,
 }: ToolbarProps) {
   return (
     <div className="toolbar">
@@ -132,6 +141,35 @@ export default function Toolbar({
         onChange={onVoiceLeadingChange}
         labels={{ off: 'Off', smooth: 'Smooth', bass: 'Bass-weighted' }}
       />
+
+      {(voiceLeading === 'smooth' || voiceLeading === 'bass') && (
+        <div className="voice-leading-options">
+          <label className="slider-label">
+            <span className="slider-name">Gravity</span>
+            <input
+              type="range"
+              min={36}
+              max={72}
+              value={gravityCenter}
+              onChange={e => onGravityCenterChange(Number(e.target.value))}
+              className="vl-slider"
+            />
+            <span className="slider-value">{midiToNoteName(gravityCenter)}</span>
+          </label>
+          <label className="slider-label">
+            <span className="slider-name">Spread</span>
+            <input
+              type="range"
+              min={12}
+              max={36}
+              value={targetSpread}
+              onChange={e => onTargetSpreadChange(Number(e.target.value))}
+              className="vl-slider"
+            />
+            <span className="slider-value">{(targetSpread / 12).toFixed(1)} oct</span>
+          </label>
+        </div>
+      )}
       
       <ToggleGroup
         label="Style"
