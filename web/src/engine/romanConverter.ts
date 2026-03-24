@@ -15,7 +15,9 @@ function standardQualitySuffix(quality: ChordType): string {
     Major: '', Minor: 'm', Dom7: '7', Maj7: 'maj7', Min7: 'm7',
     Dim: 'dim', Dim7: 'dim7', Aug: 'aug', HalfDim7: 'm7b5',
     Sus4: 'sus4', Sus2: 'sus2', MinMaj7: 'mMaj7', Maj6: '6', Min6: 'm6',
-    Dom9: '9',
+    Dom9no1: '9-1', Dom9no3: '9-3', Dom9no5: '9-5', Dom9no7: '9-7',
+    Maj9no1: 'maj9-1', Maj9no3: 'maj9-3', Maj9no5: 'maj9-5', Maj9no7: 'maj9-7',
+    Min9no1: 'm9-1', Min9no3: 'm9-3', Min9no5: 'm9-5', Min9no7: 'm9-7',
   };
   return MAP[quality];
 }
@@ -28,8 +30,9 @@ function romanQualitySuffix(quality: ChordType, isUpper: boolean): string {
 
 function isMajorLike(quality: ChordType): boolean {
   return quality === 'Major' || quality === 'Dom7' || quality === 'Maj7'
-    || quality === 'Aug' || quality === 'Maj6' || quality === 'Dom9'
-    || quality === 'Sus4' || quality === 'Sus2';
+    || quality === 'Aug' || quality === 'Maj6' || quality === 'Sus4' || quality === 'Sus2'
+    || quality === 'Dom9no1' || quality === 'Dom9no3' || quality === 'Dom9no5' || quality === 'Dom9no7'
+    || quality === 'Maj9no1' || quality === 'Maj9no3' || quality === 'Maj9no5' || quality === 'Maj9no7';
 }
 
 function detectSecondaryDominant(
