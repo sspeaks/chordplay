@@ -6,7 +6,9 @@ export const CHORD_TYPES = [
   'Major','Minor','Dom7','Maj7','Min7',
   'Dim','Dim7','Aug','HalfDim7',
   'Sus4','Sus2','MinMaj7','Maj6','Min6',
-  'Dom9'
+  'Dom9no1','Dom9no3','Dom9no5','Dom9no7',
+  'Maj9no1','Maj9no3','Maj9no5','Maj9no7',
+  'Min9no1','Min9no3','Min9no5','Min9no7',
 ] as const;
 export type ChordType = typeof CHORD_TYPES[number];
 
