@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { envelope, HARMONICS, SAMPLE_RATE } from './audio';
+import { computeHarmonics } from './formants';
 
 describe('envelope', () => {
   it('starts at 0', () => {
@@ -34,5 +35,27 @@ describe('constants', () => {
   });
   it('H7 is boosted to 0.18 for septimal 7th', () => {
     expect(HARMONICS[6]).toEqual([7, 0.18]);
+  });
+});
+
+describe('formant integration', () => {
+  it('computeHarmonics produces more harmonics than static HARMONICS', () => {
+    const formantHarmonics = computeHarmonics(220, 'Bass');
+    expect(formantHarmonics.length).toBeGreaterThan(HARMONICS.length);
+  });
+
+  it('different voices produce different amplitudes at same frequency', () => {
+    const bass = computeHarmonics(220, 'Bass');
+    const lead = computeHarmonics(220, 'Lead');
+    const bassMap = new Map(bass);
+    const leadMap = new Map(lead);
+    let hasDifference = false;
+    for (const [h] of bass) {
+      if (leadMap.has(h) && Math.abs(bassMap.get(h)! - leadMap.get(h)!) > 0.01) {
+        hasDifference = true;
+        break;
+      }
+    }
+    expect(hasDifference).toBe(true);
   });
 });

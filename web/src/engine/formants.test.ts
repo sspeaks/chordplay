@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeHarmonics, VOICE_FORMANTS, MAX_HARMONIC_FREQ, AMPLITUDE_THRESHOLD } from './formants';
+import { computeHarmonics, VOICE_FORMANTS, MAX_HARMONIC_FREQ } from './formants';
 
 describe('VOICE_FORMANTS', () => {
   it('has profiles for all four voice parts', () => {
