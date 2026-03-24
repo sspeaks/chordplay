@@ -132,7 +132,7 @@ export class ChordPlayer {
       onChordStart?.(i);
       await this.playChord(chord.root, chord.pitches, duration, tuning, style);
       if (this.stopped) break;
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, duration * 80));
     }
   }
 
