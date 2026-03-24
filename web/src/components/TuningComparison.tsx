@@ -1,5 +1,5 @@
 import { Pitch, PitchClass } from '../types';
-import { justFrequencies, equalFrequencies } from '../engine/musicTheory';
+import { justFrequencies, equalFrequencies, displayPitchName } from '../engine/musicTheory';
 
 interface TuningComparisonProps {
   root: PitchClass | null;
@@ -7,10 +7,6 @@ interface TuningComparisonProps {
   chordName: string;
 }
 
-const DISPLAY_NAMES: Record<PitchClass, string> = {
-  C: 'C', Cs: 'C♯', D: 'D', Ds: 'E♭', E: 'E', F: 'F',
-  Fs: 'F♯', G: 'G', Gs: 'A♭', A: 'A', As: 'B♭', B: 'B',
-};
 
 export default function TuningComparison({ root, pitches, chordName }: TuningComparisonProps) {
   if (!root || !pitches) return null;
@@ -24,7 +20,7 @@ export default function TuningComparison({ root, pitches, chordName }: TuningCom
     const cents = 1200 * Math.log2(equalFreq / justFreq);
     
     return {
-      name: `${DISPLAY_NAMES[pitch.pitchClass]}${pitch.octave}`,
+      name: `${displayPitchName(pitch.pitchClass, root)}${pitch.octave}`,
       justFreq,
       equalFreq,
       cents,
