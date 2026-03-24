@@ -69,6 +69,11 @@ function glottalSource(n: number): number {
   return 1 / n;
 }
 
+// Target amplitude sum — matched to the original HARMONICS array so the
+// existing master gain calibration (0.3 / voiceCount) stays correct and
+// the mix doesn't clip. Old sum: 1.0+0.7+0.55+0.35+0.25+0.12+0.18+0.06 = 3.21
+const TARGET_AMP_SUM = 3.21;
+
 export function computeHarmonics(
   f0: number,
   voicePart: VoicePart,
@@ -76,21 +81,22 @@ export function computeHarmonics(
   const profile = VOICE_FORMANTS[voicePart];
   const maxHarmonic = Math.floor(MAX_HARMONIC_FREQ / f0);
   const raw: HarmonicAmplitude[] = [];
-  let maxAmp = 0;
 
   for (let n = 1; n <= maxHarmonic; n++) {
     const freq = n * f0;
     const source = glottalSource(n);
     const formant = formantEnvelope(freq, profile);
-    // Quiet glottal baseline + formant boost gives ~50:1 peak-to-valley
-    // contrast (~34 dB), matching real vocal tract resonance depth
     const amp = source * (GLOTTAL_FLOOR + FORMANT_GAIN * formant);
     if (amp > AMPLITUDE_THRESHOLD) {
       raw.push([n, amp]);
-      if (amp > maxAmp) maxAmp = amp;
     }
   }
 
-  if (maxAmp === 0) return raw;
-  return raw.map(([h, a]) => [h, a / maxAmp]);
+  // Normalize so total amplitude sum matches old HARMONICS calibration,
+  // preventing clipping when many harmonics are present (e.g. bass at 110Hz
+  // produces 45 harmonics vs the old 8)
+  const rawSum = raw.reduce((s, [, a]) => s + a, 0);
+  if (rawSum === 0) return raw;
+  const scale = TARGET_AMP_SUM / rawSum;
+  return raw.map(([h, a]) => [h, a * scale]);
 }

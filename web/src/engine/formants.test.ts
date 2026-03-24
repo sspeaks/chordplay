@@ -35,10 +35,10 @@ describe('computeHarmonics', () => {
     }
   });
 
-  it('normalizes so max amplitude is 1.0', () => {
+  it('normalizes so total amplitude sum matches calibration target', () => {
     const result = computeHarmonics(220, 'Bass');
-    const maxAmp = Math.max(...result.map(([, a]) => a));
-    expect(maxAmp).toBeCloseTo(1.0, 5);
+    const sum = result.reduce((s, [, a]) => s + a, 0);
+    expect(sum).toBeCloseTo(3.21, 1);
   });
 
   it('respects MAX_HARMONIC_FREQ ceiling', () => {
@@ -66,12 +66,11 @@ describe('computeHarmonics', () => {
   });
 
   it('returns single harmonic when f0 >= MAX_HARMONIC_FREQ', () => {
-    // At f0=MAX_HARMONIC_FREQ, only h1 exists; glottal source provides
-    // baseline energy even without formant boost
+    // At f0=MAX_HARMONIC_FREQ, only h1 exists; gets full target sum
     const result = computeHarmonics(MAX_HARMONIC_FREQ, 'Tenor');
     expect(result).toHaveLength(1);
     expect(result[0]![0]).toBe(1);
-    expect(result[0]![1]).toBeCloseTo(1.0);
+    expect(result[0]![1]).toBeCloseTo(3.21, 1);
   });
 
   it('harmonics near F1 are louder than harmonics between formants', () => {
