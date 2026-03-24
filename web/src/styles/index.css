@@ -8,8 +8,563 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: #12121e;
   color: #e0e0e0;
+  line-height: 1.6;
 }
 
 #root {
   min-height: 100vh;
+}
+
+.app {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.app-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid #262638;
+}
+
+.app-header h1 {
+  font-size: 2.5rem;
+  color: #4a6fa5;
+  margin-bottom: 0.5rem;
+}
+
+.app-header .subtitle {
+  font-size: 1.1rem;
+  color: #888;
+}
+
+/* Toolbar */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: #1e1e30;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  align-items: center;
+}
+
+.toggle-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.group-label {
+  font-size: 0.85rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.toggle-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.toggle-btn {
+  padding: 0.5rem 1rem;
+  background: #2a2a3e;
+  color: #aaa;
+  border: 1px solid #333;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.toggle-btn:hover {
+  background: #333348;
+  color: #e0e0e0;
+}
+
+.toggle-btn.active {
+  background: #4a6fa5;
+  color: #fff;
+  border-color: #4a6fa5;
+  box-shadow: 0 0 12px rgba(74, 111, 165, 0.4);
+}
+
+.syntax-help-btn {
+  margin-left: auto;
+  padding: 0.5rem 1.5rem;
+  background: #2a2a3e;
+  color: #aaa;
+  border: 1px solid #333;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.syntax-help-btn:hover {
+  background: #4a6fa5;
+  color: #fff;
+  border-color: #4a6fa5;
+}
+
+/* Chord Input */
+.chord-input-container {
+  position: relative;
+  margin-bottom: 1.5rem;
+  background: #1a1a2e;
+  border-radius: 8px;
+  border: 2px solid #333;
+  padding: 1rem;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+
+.chord-input-textarea {
+  width: 100%;
+  min-height: 80px;
+  background: transparent;
+  color: transparent;
+  caret-color: #4a6fa5;
+  border: none;
+  outline: none;
+  font-size: 1.1rem;
+  font-family: inherit;
+  resize: vertical;
+  position: relative;
+  z-index: 1;
+}
+
+.chord-input-display {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  right: 1rem;
+  pointer-events: none;
+  font-size: 1.1rem;
+  font-family: inherit;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  line-height: 1.5;
+}
+
+.chord-token {
+  color: #e0e0e0;
+  margin-right: 0.5em;
+}
+
+.chord-token.chord-active {
+  background: rgba(74, 111, 165, 0.3);
+  color: #4a6fa5;
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  box-shadow: 0 0 8px rgba(74, 111, 165, 0.5);
+}
+
+.chord-token.chord-invalid {
+  color: #e07a5f;
+  text-decoration: wavy underline;
+  text-decoration-color: #e07a5f;
+}
+
+/* Playback Controls */
+.playback-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: center;
+  padding: 1.5rem;
+  background: #1e1e30;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+}
+
+.transport-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.control-btn, .play-btn {
+  padding: 0.75rem 1.5rem;
+  background: #2a2a3e;
+  color: #e0e0e0;
+  border: 1px solid #333;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: all 0.2s;
+}
+
+.control-btn:hover:not(:disabled), .play-btn:hover:not(:disabled) {
+  background: #333348;
+  border-color: #4a6fa5;
+}
+
+.control-btn:disabled, .play-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.play-btn {
+  min-width: 80px;
+}
+
+.play-btn.playing {
+  background: #8b2e2e;
+  border-color: #e07a5f;
+  color: #fff;
+}
+
+.tempo-control {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 200px;
+}
+
+.tempo-control label {
+  font-size: 0.9rem;
+  color: #888;
+}
+
+.tempo-slider {
+  flex: 1;
+  accent-color: #4a6fa5;
+}
+
+.tempo-value {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  color: #e0e0e0;
+  min-width: 3rem;
+}
+
+.chord-counter {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  color: #aaa;
+  font-size: 0.95rem;
+  margin-left: auto;
+}
+
+/* Note Cards */
+.note-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.note-card {
+  flex: 1;
+  min-width: 150px;
+  padding: 1.5rem;
+  background: #1e1e30;
+  border: 2px solid;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.note-name {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+
+.voice-part {
+  font-size: 0.85rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.75rem;
+}
+
+.note-freq {
+  font-size: 0.95rem;
+  color: #aaa;
+  margin-bottom: 0.5rem;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+
+.note-interval {
+  font-size: 0.85rem;
+  color: #666;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+
+/* Tuning Comparison */
+.tuning-comparison {
+  padding: 1.5rem;
+  background: #1e1e30;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+}
+
+.tuning-header h3 {
+  color: #e0e0e0;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.tuning-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.tuning-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.tuning-col-label {
+  font-size: 0.9rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.5rem;
+  border-radius: 6px;
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.tuning-col-label.just {
+  background: rgba(42, 157, 143, 0.2);
+  color: #2a9d8f;
+}
+
+.tuning-col-label.equal {
+  background: rgba(74, 111, 165, 0.2);
+  color: #4a6fa5;
+}
+
+.tuning-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem;
+  background: #2a2a3e;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.9rem;
+}
+
+.tuning-row .note-name {
+  font-size: 0.9rem;
+  color: #e0e0e0;
+  margin: 0;
+}
+
+.tuning-row .freq-value {
+  color: #aaa;
+}
+
+.cents {
+  color: #888;
+  font-size: 0.85rem;
+}
+
+.cents-zero {
+  color: #2a9d8f;
+}
+
+/* Syntax Reference */
+.syntax-reference {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 500px;
+  max-width: 90vw;
+  background: #1e1e30;
+  border-left: 2px solid #262638;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.5);
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+  overflow-y: auto;
+  z-index: 100;
+}
+
+.syntax-reference.open {
+  transform: translateX(0);
+}
+
+.syntax-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  background: #262638;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.syntax-header h2 {
+  color: #e0e0e0;
+  font-size: 1.3rem;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.close-btn:hover {
+  color: #e07a5f;
+}
+
+.syntax-content {
+  padding: 1.5rem;
+}
+
+.syntax-content section {
+  margin-bottom: 2rem;
+}
+
+.syntax-content h3 {
+  color: #4a6fa5;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+/* Format Example */
+.format-section .format-example {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 1.2rem;
+  padding: 1rem;
+  background: #2a2a3e;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.fmt-inversion {
+  color: #7a5fca;
+}
+
+.fmt-root {
+  color: #2a9d8f;
+  font-weight: bold;
+}
+
+.fmt-quality {
+  color: #e07a5f;
+}
+
+.format-desc {
+  color: #888;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* Root Chips */
+.root-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chip {
+  padding: 0.4rem 0.8rem;
+  background: #2a2a3e;
+  border: 1px solid #333;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #e0e0e0;
+}
+
+.chip code {
+  color: #2a9d8f;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  margin-left: 0.3rem;
+}
+
+/* Quality Grid */
+.quality-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.quality-item {
+  padding: 0.75rem;
+  background: #2a2a3e;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.quality-display {
+  color: #e0e0e0;
+  font-size: 0.95rem;
+}
+
+.quality-code {
+  color: #e07a5f;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.85rem;
+}
+
+/* Inversion Info */
+.inversion-info {
+  color: #aaa;
+  font-size: 0.9rem;
+  line-height: 1.8;
+}
+
+.inversion-info p {
+  margin-bottom: 0.5rem;
+}
+
+.inversion-info strong {
+  color: #7a5fca;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+
+.inversion-info em {
+  color: #666;
+  font-style: italic;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .app {
+    padding: 1rem;
+  }
+  
+  .toolbar {
+    flex-direction: column;
+  }
+  
+  .syntax-help-btn {
+    margin-left: 0;
+    width: 100%;
+  }
+  
+  .playback-controls {
+    flex-direction: column;
+  }
+  
+  .chord-counter {
+    margin-left: 0;
+  }
+  
+  .note-cards {
+    flex-direction: column;
+  }
+  
+  .tuning-columns {
+    grid-template-columns: 1fr;
+  }
+  
+  .quality-grid {
+    grid-template-columns: 1fr;
+  }
 }
