@@ -79,15 +79,17 @@ describe('voiceChordSequence', () => {
 
 describe('smoothVoice with gravity/spread', () => {
   it('gravity pulls voicing toward center', () => {
-    const highPrev: Pitch[] = [
-      { pitchClass: 'As', octave: 4 },
-      { pitchClass: 'Ds', octave: 5 },
-      { pitchClass: 'G', octave: 5 },
-      { pitchClass: 'As', octave: 5 },
+    // Wide-spread prev voicing where gravity can influence octave choices
+    // because multiple permutations have competitive movement costs
+    const prev: Pitch[] = [
+      { pitchClass: 'C', octave: 3 },
+      { pitchClass: 'G', octave: 3 },
+      { pitchClass: 'E', octave: 4 },
+      { pitchClass: 'C', octave: 5 },
     ];
-    const nextPCs: PitchClass[] = ['C', 'E', 'G', 'C'];
-    const withGravity = smoothVoice('equal', highPrev, nextPCs, { gravityCenter: 55 });
-    const withoutGravity = smoothVoice('equal', highPrev, nextPCs, { gravityCenter: 84 });
+    const nextPCs: PitchClass[] = ['D', 'A', 'Fs', 'D'];
+    const withGravity = smoothVoice('equal', prev, nextPCs, { gravityCenter: 55 });
+    const withoutGravity = smoothVoice('equal', prev, nextPCs, { gravityCenter: 84 });
     const gravityCentroid = withGravity.map(pitchToMidi).reduce((a, b) => a + b, 0) / 4;
     const noGravityCentroid = withoutGravity.map(pitchToMidi).reduce((a, b) => a + b, 0) / 4;
     expect(gravityCentroid).toBeLessThan(noGravityCentroid);
