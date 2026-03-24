@@ -21,7 +21,7 @@ export const DEFAULTS: AppState = {
   tempo: 0.8,
   notationMode: 'standard',
   selectedKey: { root: 'C', quality: 'major' },
-  gravityCenter: 60,
+  gravityCenter: 57,  // A3
   targetSpread: 12,
 };
 

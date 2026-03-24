@@ -3,7 +3,7 @@ import { pitchToMidi, midiToPitch, nearestPitch, voiceChord, chordPitchClasses, 
 
 export const GRAVITY_WEIGHT = 1.0;
 export const SPREAD_WEIGHT = 2;
-export const DEFAULT_GRAVITY_CENTER = 60;  // C4
+export const DEFAULT_GRAVITY_CENTER = 57;  // A3
 export const DEFAULT_TARGET_SPREAD = 12;   // 1 octave
 
 function permutations<T>(arr: T[]): T[][] {

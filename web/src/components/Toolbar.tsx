@@ -202,6 +202,21 @@ export default function Toolbar({
       >
         {isExporting ? 'Exporting…' : 'Export WAV'}
       </button>
+
+      <button
+        className="syntax-help-btn"
+        onClick={() => {
+          navigator.clipboard.writeText(window.location.href).then(() => {
+            const btn = document.activeElement as HTMLButtonElement;
+            const orig = btn.textContent;
+            btn.textContent = 'Copied!';
+            setTimeout(() => { btn.textContent = orig; }, 1500);
+          });
+        }}
+        title="Copy shareable link to clipboard"
+      >
+        Share 🔗
+      </button>
     </div>
   );
 }
