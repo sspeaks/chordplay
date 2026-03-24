@@ -29,7 +29,7 @@ Remove `Dom9`. Add 12 new entries to `CHORD_TYPES`:
 | `Min9no5` | `m9-5` | `[0, 3, 10, 14]` |
 | `Min9no7` | `m9-7`, `madd9` | `[0, 3, 7, 14]` |
 
-Intervals are derived by taking the full 5-note chord and removing the omitted note. Some pairs produce identical intervals (e.g., `Dom9no7` and `Maj9no7` both yield `[0, 4, 7, 14]`) — this is correct since the omitted note was the one that distinguished them.
+Intervals are derived by taking the full 5-note chord and removing the omitted note in ascending order. This differs from the old `Dom9` voicing (`[-5, 2, 4, 10]`) which used a compact layout placing the 5th below the root — the new types use straightforward ascending intervals and rely on the inversion system for voicing variety. Some pairs produce identical intervals (e.g., `Dom9no7` and `Maj9no7` both yield `[0, 4, 7, 14]`) — this is correct since the omitted note was the one that distinguished them.
 
 ### Parser changes (`parseQuality` in `parser.ts`)
 
