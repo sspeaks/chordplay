@@ -126,9 +126,20 @@ function justRatio(semitones: number, useClassicalMinor7: boolean = false): numb
   return ratios[semitones]!;
 }
 
+const JUST_RATIO_LABELS: Record<number, string> = {
+  0: '1/1', 1: '16/15', 2: '9/8', 3: '6/5', 4: '5/4', 5: '4/3',
+  6: '7/5', 7: '3/2', 8: '8/5', 9: '5/3', 10: '9/5', 11: '15/8',
+};
+
+export function justRatioLabel(semitones: number, useClassicalMinor7: boolean): string {
+  const normalized = ((semitones % 12) + 12) % 12;
+  if (normalized === 10 && !useClassicalMinor7) return '7/4';
+  return JUST_RATIO_LABELS[normalized]!;
+}
+
 // Detect whether a chord has a minor 3rd (interval 3) without a major 3rd (interval 4),
 // indicating a minor-quality chord where 9/5 is the correct minor 7th ratio.
-function hasMinorQuality(intervals: number[]): boolean {
+export function hasMinorQuality(intervals: number[]): boolean {
   const normalized = intervals.map(i => ((i % 12) + 12) % 12);
   return normalized.includes(3) && !normalized.includes(4);
 }

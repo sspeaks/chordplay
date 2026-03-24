@@ -1,5 +1,5 @@
-import { Pitch, PitchClass, Tuning } from '../types';
-import { pitchToMidi, justFrequencies, equalFrequencies } from '../engine/musicTheory';
+import { Pitch, PitchClass, Tuning, PITCH_CLASSES } from '../types';
+import { pitchToMidi, justFrequencies, equalFrequencies, hasMinorQuality, justRatioLabel } from '../engine/musicTheory';
 
 interface NoteCardsProps {
   pitches: [Pitch, Pitch, Pitch, Pitch] | null;
@@ -19,11 +19,6 @@ const INTERVAL_NAMES = [
   'Tritone', 'P 5th', 'Min 6th', 'Maj 6th', 'Min 7th', 'Maj 7th',
 ];
 
-const JUST_RATIOS = [
-  '1/1', '16/15', '9/8', '6/5', '5/4', '4/3',
-  '45/32', '3/2', '8/5', '5/3', '9/5', '15/8',
-];
-
 export default function NoteCards({ pitches, root, tuning }: NoteCardsProps) {
   if (!pitches || !root) {
     return (
@@ -34,6 +29,12 @@ export default function NoteCards({ pitches, root, tuning }: NoteCardsProps) {
   }
   
   const rootMidi = pitchToMidi({ pitchClass: root, octave: 4 });
+  const midis = pitches.map(pitchToMidi);
+  const bassMidi = Math.min(...midis);
+  const rootPc = PITCH_CLASSES.indexOf(root);
+  const rootMidiAbs = bassMidi - (((bassMidi - rootPc) % 12) + 12) % 12;
+  const chordIntervals = midis.map(m => m - rootMidiAbs);
+  const useClassical = hasMinorQuality(chordIntervals);
   const frequencies = tuning === 'just' 
     ? justFrequencies(root, pitches)
     : equalFrequencies(pitches);
@@ -46,7 +47,7 @@ export default function NoteCards({ pitches, root, tuning }: NoteCardsProps) {
         const freq = frequencies[idx]!;
         const interval = (midi - rootMidi + 1200) % 12;
         const intervalName = INTERVAL_NAMES[interval];
-        const ratio = JUST_RATIOS[interval];
+        const ratio = justRatioLabel(interval, useClassical);
         
         return (
           <div key={idx} className="note-card" style={{ borderColor: color }}>

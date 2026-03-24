@@ -11,6 +11,8 @@ import {
   justFrequencies,
   equalFrequencies,
   midiToPitch,
+  hasMinorQuality,
+  justRatioLabel,
 } from './musicTheory';
 import type { Pitch } from '../types';
 
@@ -215,5 +217,52 @@ describe('equalFrequencies', () => {
     const pitches: Pitch[] = [{ pitchClass: 'A', octave: 4 }];
     const freqs = equalFrequencies(pitches);
     expect(freqs[0]).toBeCloseTo(440.0, 1);
+  });
+});
+
+describe('justRatioLabel', () => {
+  it('returns 7/5 for tritone (not 45/32)', () => {
+    expect(justRatioLabel(6, false)).toBe('7/5');
+    expect(justRatioLabel(6, true)).toBe('7/5');
+  });
+
+  it('returns 7/4 for minor 7th in dominant context', () => {
+    expect(justRatioLabel(10, false)).toBe('7/4');
+  });
+
+  it('returns 9/5 for minor 7th in minor context', () => {
+    expect(justRatioLabel(10, true)).toBe('9/5');
+  });
+
+  it('returns correct labels for all basic intervals', () => {
+    const expected = ['1/1','16/15','9/8','6/5','5/4','4/3','7/5','3/2','8/5','5/3','9/5','15/8'];
+    for (let i = 0; i < 12; i++) {
+      expect(justRatioLabel(i, true)).toBe(expected[i]);
+    }
+  });
+
+  it('handles octave-wrapped intervals', () => {
+    expect(justRatioLabel(14, true)).toBe('9/8');   // 14 % 12 = 2
+    expect(justRatioLabel(19, true)).toBe('3/2');   // 19 % 12 = 7
+  });
+});
+
+describe('hasMinorQuality', () => {
+  it('detects minor quality (has m3, no M3)', () => {
+    expect(hasMinorQuality([0, 3, 7, 10])).toBe(true);  // min7
+    expect(hasMinorQuality([0, 3, 7, 12])).toBe(true);  // minor triad
+  });
+
+  it('rejects dominant quality (has M3)', () => {
+    expect(hasMinorQuality([0, 4, 7, 10])).toBe(false);  // dom7
+    expect(hasMinorQuality([0, 4, 7, 12])).toBe(false);  // major triad
+  });
+
+  it('rejects chords with both m3 and M3', () => {
+    expect(hasMinorQuality([0, 3, 4, 7])).toBe(false);
+  });
+
+  it('handles intervals beyond one octave', () => {
+    expect(hasMinorQuality([0, 15, 7, 10])).toBe(true);  // 15 % 12 = 3
   });
 });
