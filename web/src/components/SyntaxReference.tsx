@@ -22,7 +22,6 @@ const ROOTS = [
 
 const QUALITIES = [
   { display: 'Major', code: '' },
-  { display: 'Dom 9 (rootless)', code: '9' },
   { display: 'Minor', code: 'm' },
   { display: 'Maj 6', code: '6' },
   { display: 'Dom 7', code: '7' },
@@ -80,6 +79,36 @@ export default function SyntaxReference({ isOpen, onClose }: SyntaxReferenceProp
                 <code className="quality-code">{qual.code || '(none)'}</code>
               </div>
             ))}
+          </div>
+        </section>
+
+        <section className="ninth-chords-section">
+          <h3>9th Chords</h3>
+          <p className="format-desc">
+            9th chords have 5 notes but only 4 voices, so you must omit one note
+            with <code>-1</code>, <code>-3</code>, <code>-5</code>, or <code>-7</code>.
+          </p>
+          <div className="quality-grid">
+            <div className="quality-item">
+              <span className="quality-display">Dom 9</span>
+              <code className="quality-code">9-N</code>
+            </div>
+            <div className="quality-item">
+              <span className="quality-display">Maj 9</span>
+              <code className="quality-code">maj9-N</code>
+            </div>
+            <div className="quality-item">
+              <span className="quality-display">Min 9</span>
+              <code className="quality-code">m9-N</code>
+            </div>
+            <div className="quality-item">
+              <span className="quality-display">Add 9</span>
+              <code className="quality-code">add9</code>
+            </div>
+            <div className="quality-item">
+              <span className="quality-display">Min Add 9</span>
+              <code className="quality-code">madd9</code>
+            </div>
           </div>
         </section>
         
