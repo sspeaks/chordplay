@@ -61,6 +61,7 @@ Replace the `Dom 9 (rootless)` entry in QUALITIES with a brief description of th
 - `web/src/types.ts` — Update `CHORD_TYPES` array
 - `web/src/engine/musicTheory.ts` — Update `INTERVALS` map
 - `web/src/engine/parser.ts` — Update `parseQuality` entries
+- `web/src/engine/romanConverter.ts` — Update `standardQualitySuffix` MAP and `isMajorLike`
 - `web/src/components/SyntaxReference.tsx` — Update QUALITIES display
 - `myRomance.txt` — Fix bare 9th chord
 - `web/src/engine/parser.test.ts` — Update and add parser tests

@@ -336,7 +336,85 @@ git commit -m "feat: add parser support for 9th chord omission syntax (TDD)"
 
 ---
 
-### Task 4: Update myRomance.txt and integration test
+### Task 4: Update romanConverter.ts
+
+**Files:**
+- Modify: `web/src/engine/romanConverter.ts:13-21` (`standardQualitySuffix`)
+- Modify: `web/src/engine/romanConverter.ts:29-33` (`isMajorLike`)
+
+- [ ] **Step 1: Update standardQualitySuffix MAP**
+
+In `web/src/engine/romanConverter.ts`, replace:
+
+```typescript
+function standardQualitySuffix(quality: ChordType): string {
+  const MAP: Record<ChordType, string> = {
+    Major: '', Minor: 'm', Dom7: '7', Maj7: 'maj7', Min7: 'm7',
+    Dim: 'dim', Dim7: 'dim7', Aug: 'aug', HalfDim7: 'm7b5',
+    Sus4: 'sus4', Sus2: 'sus2', MinMaj7: 'mMaj7', Maj6: '6', Min6: 'm6',
+    Dom9: '9',
+  };
+  return MAP[quality];
+}
+```
+
+with:
+
+```typescript
+function standardQualitySuffix(quality: ChordType): string {
+  const MAP: Record<ChordType, string> = {
+    Major: '', Minor: 'm', Dom7: '7', Maj7: 'maj7', Min7: 'm7',
+    Dim: 'dim', Dim7: 'dim7', Aug: 'aug', HalfDim7: 'm7b5',
+    Sus4: 'sus4', Sus2: 'sus2', MinMaj7: 'mMaj7', Maj6: '6', Min6: 'm6',
+    Dom9no1: '9-1', Dom9no3: '9-3', Dom9no5: '9-5', Dom9no7: '9-7',
+    Maj9no1: 'maj9-1', Maj9no3: 'maj9-3', Maj9no5: 'maj9-5', Maj9no7: 'maj9-7',
+    Min9no1: 'm9-1', Min9no3: 'm9-3', Min9no5: 'm9-5', Min9no7: 'm9-7',
+  };
+  return MAP[quality];
+}
+```
+
+- [ ] **Step 2: Update isMajorLike**
+
+In `web/src/engine/romanConverter.ts`, replace:
+
+```typescript
+function isMajorLike(quality: ChordType): boolean {
+  return quality === 'Major' || quality === 'Dom7' || quality === 'Maj7'
+    || quality === 'Aug' || quality === 'Maj6' || quality === 'Dom9'
+    || quality === 'Sus4' || quality === 'Sus2';
+}
+```
+
+with:
+
+```typescript
+function isMajorLike(quality: ChordType): boolean {
+  return quality === 'Major' || quality === 'Dom7' || quality === 'Maj7'
+    || quality === 'Aug' || quality === 'Maj6' || quality === 'Sus4' || quality === 'Sus2'
+    || quality === 'Dom9no1' || quality === 'Dom9no3' || quality === 'Dom9no5' || quality === 'Dom9no7'
+    || quality === 'Maj9no1' || quality === 'Maj9no3' || quality === 'Maj9no5' || quality === 'Maj9no7';
+}
+```
+
+Note: Minor 9th variants are NOT major-like (they contain a minor 3rd), so they are excluded.
+
+- [ ] **Step 3: Verify build compiles**
+
+Run: `cd web && npx tsc --noEmit 2>&1 | tail -10`
+
+Expected: No errors
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add web/src/engine/romanConverter.ts
+git commit -m "feat: update romanConverter for 9th chord omission types"
+```
+
+---
+
+### Task 5: Update myRomance.txt and integration test
 
 **Files:**
 - Modify: `myRomance.txt`
@@ -387,7 +465,7 @@ git commit -m "fix: update myRomance.txt A9 → A9-1 for new 9th chord syntax"
 
 ---
 
-### Task 5: Update roman numeral tests
+### Task 6: Update roman numeral tests
 
 **Files:**
 - Modify: `web/src/engine/romanParser.test.ts:71-73`
@@ -446,7 +524,7 @@ git commit -m "test: add roman numeral 9th chord omission tests"
 
 ---
 
-### Task 6: Update SyntaxReference
+### Task 7: Update SyntaxReference
 
 **Files:**
 - Modify: `web/src/components/SyntaxReference.tsx:23-39`
@@ -545,7 +623,7 @@ git commit -m "feat: update syntax reference for 9th chord omission system"
 
 ---
 
-### Task 7: Full test suite verification
+### Task 8: Full test suite verification
 
 - [ ] **Step 1: Run all tests**
 
