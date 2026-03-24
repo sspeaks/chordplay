@@ -3,7 +3,8 @@ import { VoiceLeading, PlayStyle, Tuning, ChordSymbol, Pitch, PitchClass, Notati
 import { parseChordSequence } from './engine/parser';
 import { parseRomanSequence } from './engine/romanParser';
 import { chordTextToRoman, romanTextToStandard } from './engine/romanConverter';
-import { voiceChordSequence, DEFAULT_GRAVITY_CENTER, DEFAULT_TARGET_SPREAD } from './engine/voiceLeading';
+import { voiceChordSequence } from './engine/voiceLeading';
+import { DEFAULTS, encodeUrlState, decodeUrlState, AppState } from './engine/urlState';
 import { ChordPlayer, renderSequenceOffline } from './engine/audio';
 import { encodeWav } from './engine/wav';
 import Toolbar from './components/Toolbar';
@@ -13,20 +14,31 @@ import NoteCards from './components/NoteCards';
 import TuningComparison from './components/TuningComparison';
 import SyntaxReference from './components/SyntaxReference';
 
+const initialUrlState = decodeUrlState(window.location.hash);
+
 export default function App() {
-  const [chordText, setChordText] = useState('Cmaj7 Am7 Dm7 G7 Em7 A7 Dm7 G7 Cmaj7 C7 Fmaj7 Fm6 Cmaj7 Am7 Dm7 G7 Cmaj7');
-  const [voiceLeading, setVoiceLeading] = useState<VoiceLeading>('smooth');
-  const [playStyle, setPlayStyle] = useState<PlayStyle>('block');
-  const [tuning, setTuning] = useState<Tuning>('equal');
-  const [tempo, setTempo] = useState(0.8);
+  const [chordText, setChordText] = useState(initialUrlState.chordText ?? DEFAULTS.chordText);
+  const [voiceLeading, setVoiceLeading] = useState<VoiceLeading>(initialUrlState.voiceLeading ?? DEFAULTS.voiceLeading);
+  const [playStyle, setPlayStyle] = useState<PlayStyle>(initialUrlState.playStyle ?? DEFAULTS.playStyle);
+  const [tuning, setTuning] = useState<Tuning>(initialUrlState.tuning ?? DEFAULTS.tuning);
+  const [tempo, setTempo] = useState(initialUrlState.tempo ?? DEFAULTS.tempo);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentChordIndex, setCurrentChordIndex] = useState(0);
   const [syntaxHelpOpen, setSyntaxHelpOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  const [notationMode, setNotationMode] = useState<NotationMode>('standard');
-  const [selectedKey, setSelectedKey] = useState<KeySignature>({ root: 'C', quality: 'major' });
-  const [gravityCenter, setGravityCenter] = useState(DEFAULT_GRAVITY_CENTER);
-  const [targetSpread, setTargetSpread] = useState(DEFAULT_TARGET_SPREAD);
+  const [notationMode, setNotationMode] = useState<NotationMode>(initialUrlState.notationMode ?? DEFAULTS.notationMode);
+  const [selectedKey, setSelectedKey] = useState<KeySignature>(initialUrlState.selectedKey ?? DEFAULTS.selectedKey);
+  const [gravityCenter, setGravityCenter] = useState(initialUrlState.gravityCenter ?? DEFAULTS.gravityCenter);
+  const [targetSpread, setTargetSpread] = useState(initialUrlState.targetSpread ?? DEFAULTS.targetSpread);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const state: AppState = { chordText, tuning, voiceLeading, playStyle, tempo, notationMode, selectedKey, gravityCenter, targetSpread };
+      const hash = encodeUrlState(state);
+      history.replaceState(null, '', hash ? `#${hash}` : window.location.pathname);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [chordText, tuning, voiceLeading, playStyle, tempo, notationMode, selectedKey, gravityCenter, targetSpread]);
   
   const playerRef = useRef<ChordPlayer | null>(null);
   const playingRef = useRef(false);
