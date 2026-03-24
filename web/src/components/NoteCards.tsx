@@ -1,4 +1,4 @@
-import { Pitch, PitchClass, Tuning, VOICE_PARTS } from '../types';
+import { Pitch, PitchClass, Tuning } from '../types';
 import { pitchToMidi, justFrequencies, equalFrequencies } from '../engine/musicTheory';
 
 interface NoteCardsProps {
@@ -7,12 +7,7 @@ interface NoteCardsProps {
   tuning: Tuning;
 }
 
-const VOICE_COLORS = {
-  Bass: '#2a9d8f',
-  Bari: '#7a5fca',
-  Tenor: '#4a6fa5',
-  Lead: '#e07a5f',
-};
+const VOICE_COLORS = ['#2a9d8f', '#7a5fca', '#4a6fa5', '#e07a5f'];
 
 const DISPLAY_NAMES: Record<PitchClass, string> = {
   C: 'C', Cs: 'C♯', D: 'D', Ds: 'E♭', E: 'E', F: 'F',
@@ -32,15 +27,8 @@ const JUST_RATIOS = [
 export default function NoteCards({ pitches, root, tuning }: NoteCardsProps) {
   if (!pitches || !root) {
     return (
-      <div className="note-cards">
-        {VOICE_PARTS.map(voice => (
-          <div key={voice} className="note-card" style={{ borderColor: VOICE_COLORS[voice] }}>
-            <div className="note-name" style={{ color: VOICE_COLORS[voice] }}>—</div>
-            <div className="voice-part">{voice}</div>
-            <div className="note-freq">—</div>
-            <div className="note-interval">—</div>
-          </div>
-        ))}
+      <div className="note-cards empty">
+        <p>Enter chords and press Play to see voicing details</p>
       </div>
     );
   }
@@ -53,7 +41,7 @@ export default function NoteCards({ pitches, root, tuning }: NoteCardsProps) {
   return (
     <div className="note-cards">
       {pitches.map((pitch, idx) => {
-        const voice = VOICE_PARTS[idx]!;
+        const color = VOICE_COLORS[idx % VOICE_COLORS.length]!;
         const midi = pitchToMidi(pitch);
         const freq = frequencies[idx]!;
         const interval = (midi - rootMidi + 1200) % 12;
@@ -61,11 +49,10 @@ export default function NoteCards({ pitches, root, tuning }: NoteCardsProps) {
         const ratio = JUST_RATIOS[interval];
         
         return (
-          <div key={voice} className="note-card" style={{ borderColor: VOICE_COLORS[voice] }}>
-            <div className="note-name" style={{ color: VOICE_COLORS[voice] }}>
+          <div key={idx} className="note-card" style={{ borderColor: color }}>
+            <div className="note-name" style={{ color }}>
               {DISPLAY_NAMES[pitch.pitchClass]}{pitch.octave}
             </div>
-            <div className="voice-part">{voice}</div>
             <div className="note-freq">{freq.toFixed(2)} Hz</div>
             <div className="note-interval">{intervalName} · {ratio}</div>
           </div>

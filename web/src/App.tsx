@@ -80,15 +80,27 @@ export default function App() {
     }
   };
   
+  const playSingleChord = (index: number) => {
+    if (index < 0 || index >= validChords.length) return;
+    if (!playerRef.current) playerRef.current = new ChordPlayer();
+    const chord = validChords[index]!;
+    const pitches = voicings[index]!;
+    playerRef.current.playChord(chord.root, pitches, tempo, tuning, playStyle);
+  };
+
   const handlePrev = () => {
     if (currentChordIndex > 0) {
-      setCurrentChordIndex(currentChordIndex - 1);
+      const newIdx = currentChordIndex - 1;
+      setCurrentChordIndex(newIdx);
+      playSingleChord(newIdx);
     }
   };
   
   const handleNext = () => {
     if (currentChordIndex < validChords.length - 1) {
-      setCurrentChordIndex(currentChordIndex + 1);
+      const newIdx = currentChordIndex + 1;
+      setCurrentChordIndex(newIdx);
+      playSingleChord(newIdx);
     }
   };
   
