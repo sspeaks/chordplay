@@ -55,8 +55,73 @@ describe('parseChord', () => {
   it('Cm6 → C Min6', () => {
     expectChord('Cm6', { root: 'C', quality: 'Min6', inversion: null });
   });
-  it('A9 → A Dom9 (rootless)', () => {
-    expectChord('A9', { root: 'A', quality: 'Dom9', inversion: null });
+  // 9th chords: bare 9 is invalid (5 notes), must specify omission
+  it('A9 (bare) fails — must specify omission', () => {
+    expectFail('A9');
+  });
+  it('Cmaj9 (bare) fails', () => {
+    expectFail('Cmaj9');
+  });
+  it('Cm9 (bare) fails', () => {
+    expectFail('Cm9');
+  });
+
+  // Dominant 9th omissions
+  it('C9-1 → C Dom9no1', () => {
+    expectChord('C9-1', { root: 'C', quality: 'Dom9no1', inversion: null });
+  });
+  it('C9-3 → C Dom9no3', () => {
+    expectChord('C9-3', { root: 'C', quality: 'Dom9no3', inversion: null });
+  });
+  it('C9-5 → C Dom9no5', () => {
+    expectChord('C9-5', { root: 'C', quality: 'Dom9no5', inversion: null });
+  });
+  it('C9-7 → C Dom9no7', () => {
+    expectChord('C9-7', { root: 'C', quality: 'Dom9no7', inversion: null });
+  });
+
+  // Major 9th omissions
+  it('Cmaj9-1 → C Maj9no1', () => {
+    expectChord('Cmaj9-1', { root: 'C', quality: 'Maj9no1', inversion: null });
+  });
+  it('Cmaj9-3 → C Maj9no3', () => {
+    expectChord('Cmaj9-3', { root: 'C', quality: 'Maj9no3', inversion: null });
+  });
+  it('Cmaj9-5 → C Maj9no5', () => {
+    expectChord('Cmaj9-5', { root: 'C', quality: 'Maj9no5', inversion: null });
+  });
+  it('Cmaj9-7 → C Maj9no7', () => {
+    expectChord('Cmaj9-7', { root: 'C', quality: 'Maj9no7', inversion: null });
+  });
+
+  // Minor 9th omissions
+  it('Cm9-1 → C Min9no1', () => {
+    expectChord('Cm9-1', { root: 'C', quality: 'Min9no1', inversion: null });
+  });
+  it('Cm9-3 → C Min9no3', () => {
+    expectChord('Cm9-3', { root: 'C', quality: 'Min9no3', inversion: null });
+  });
+  it('Cm9-5 → C Min9no5', () => {
+    expectChord('Cm9-5', { root: 'C', quality: 'Min9no5', inversion: null });
+  });
+  it('Cm9-7 → C Min9no7', () => {
+    expectChord('Cm9-7', { root: 'C', quality: 'Min9no7', inversion: null });
+  });
+
+  // Aliases
+  it('Cadd9 → C Dom9no7', () => {
+    expectChord('Cadd9', { root: 'C', quality: 'Dom9no7', inversion: null });
+  });
+  it('Cmadd9 → C Min9no7', () => {
+    expectChord('Cmadd9', { root: 'C', quality: 'Min9no7', inversion: null });
+  });
+
+  // 9th with accidentals and inversions
+  it('Bb9-5 → Bb Dom9no5', () => {
+    expectChord('Bb9-5', { root: 'As', quality: 'Dom9no5', inversion: null });
+  });
+  it('1C9-1 → C Dom9no1, inversion 1', () => {
+    expectChord('1C9-1', { root: 'C', quality: 'Dom9no1', inversion: 1 });
   });
 
   // Inversions
