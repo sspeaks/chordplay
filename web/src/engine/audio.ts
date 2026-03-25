@@ -134,9 +134,42 @@ export async function renderSequenceOffline(
   return offCtx.startRendering();
 }
 
+// iOS Safari routes WebAudio through the "ringer" channel which is muted
+// by the hardware silent switch.  Playing a looping silent <audio> element
+// forces the "media" channel, which bypasses the silent switch.  We pipe
+// the AudioContext through a MediaStreamDestination → <audio> so the two
+// are tied together — when the <audio> element is playing, iOS treats all
+// AudioContext output as media audio.
+function createSilentMediaBridge(ctx: AudioContext): HTMLAudioElement | null {
+  try {
+    if (!ctx.createMediaStreamDestination) return null;
+    const dest = ctx.createMediaStreamDestination();
+    // Connect a silent oscillator to keep the stream alive
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    gain.gain.value = 0;
+    osc.connect(gain);
+    gain.connect(dest);
+    osc.start();
+
+    const audio = new Audio();
+    audio.srcObject = dest.stream;
+    audio.loop = true;
+    audio.volume = 0;
+    // setAttribute needed for older iOS — the property alone is insufficient
+    audio.setAttribute('playsinline', 'true');
+    console.log('[audio] silent media bridge created');
+    return audio;
+  } catch (e) {
+    console.warn('[audio] media bridge creation failed:', e);
+    return null;
+  }
+}
+
 // Manages Web Audio playback for chord voicings
 export class ChordPlayer {
   private ctx: AudioContext | null = null;
+  private mediaBridge: HTMLAudioElement | null = null;
   private activeNodes: { oscillators: OscillatorNode[]; gains: GainNode[] } | null = null;
   private playbackTimer: number | null = null;
   private playbackResolve: (() => void) | null = null;
@@ -162,20 +195,27 @@ export class ChordPlayer {
         (e) => console.warn('[audio] warmUp resume rejected:', e),
       );
     }
-    // Play a silent buffer through the AudioContext to force iOS Safari
-    // to activate the audio output path.  Just calling resume() is not
-    // enough — the destination node must actually render audio inside
-    // a user gesture for iOS to connect it to the hardware.
+
+    // Create and play the silent media bridge on first user gesture.
+    // This forces iOS to route WebAudio through the media channel,
+    // bypassing the hardware silent switch.
+    if (!this.mediaBridge) {
+      this.mediaBridge = createSilentMediaBridge(ctx);
+    }
+    if (this.mediaBridge) {
+      this.mediaBridge.play()
+        .then(() => console.log('[audio] media bridge playing'))
+        .catch((e) => console.warn('[audio] media bridge play failed:', e));
+    }
+
+    // Also play a silent buffer to prime the destination node.
     try {
       const buf = ctx.createBuffer(1, 1, ctx.sampleRate);
       const src = ctx.createBufferSource();
       src.buffer = buf;
       src.connect(ctx.destination);
       src.start();
-      console.log('[audio] warmUp: silent buffer played');
-    } catch (e) {
-      console.warn('[audio] warmUp: silent buffer failed:', e);
-    }
+    } catch { /* non-critical */ }
   }
 
   private async ensureRunning(): Promise<AudioContext> {
@@ -290,6 +330,11 @@ export class ChordPlayer {
 
   destroy(): void {
     this.stopCurrent();
+    if (this.mediaBridge) {
+      this.mediaBridge.pause();
+      this.mediaBridge.srcObject = null;
+      this.mediaBridge = null;
+    }
     if (this.ctx) {
       this.ctx.close();
       this.ctx = null;
