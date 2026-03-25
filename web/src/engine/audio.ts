@@ -162,6 +162,20 @@ export class ChordPlayer {
         (e) => console.warn('[audio] warmUp resume rejected:', e),
       );
     }
+    // Play a silent buffer through the AudioContext to force iOS Safari
+    // to activate the audio output path.  Just calling resume() is not
+    // enough — the destination node must actually render audio inside
+    // a user gesture for iOS to connect it to the hardware.
+    try {
+      const buf = ctx.createBuffer(1, 1, ctx.sampleRate);
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.connect(ctx.destination);
+      src.start();
+      console.log('[audio] warmUp: silent buffer played');
+    } catch (e) {
+      console.warn('[audio] warmUp: silent buffer failed:', e);
+    }
   }
 
   private async ensureRunning(): Promise<AudioContext> {
