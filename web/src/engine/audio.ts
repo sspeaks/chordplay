@@ -134,6 +134,21 @@ export async function renderSequenceOffline(
   return offCtx.startRendering();
 }
 
+// iOS Safari uses the "ambient" AVAudioSession for WebAudio, which may not
+// route oscillator output to the built-in speaker.  Playing through an
+// <audio> element forces the "playback" session, which drives the speaker.
+const SILENT_WAV = 'data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQIAAAAAAA==';
+let iosAudioUnlocked = false;
+
+function unlockIOSAudio(): void {
+  if (iosAudioUnlocked) return;
+  iosAudioUnlocked = true;
+  try {
+    const a = new Audio(SILENT_WAV);
+    a.play().catch(() => {});
+  } catch { /* non-browser environment */ }
+}
+
 // Manages Web Audio playback for chord voicings
 export class ChordPlayer {
   private ctx: AudioContext | null = null;
@@ -151,14 +166,8 @@ export class ChordPlayer {
     return this.ctx;
   }
 
-  async playChord(
-    root: PitchClass,
-    pitches: Pitch[],
-    duration: number,
-    tuning: Tuning,
-    style: PlayStyle,
-  ): Promise<void> {
-    this.clearAudio();
+  private async ensureRunning(): Promise<AudioContext> {
+    unlockIOSAudio();
     const ctx = this.getContext();
     if (ctx.state !== 'running') {
       try {
@@ -169,8 +178,21 @@ export class ChordPlayer {
         this.ctx = null;
         const fresh = this.getContext();
         await fresh.resume();
+        return fresh;
       }
     }
+    return ctx;
+  }
+
+  async playChord(
+    root: PitchClass,
+    pitches: Pitch[],
+    duration: number,
+    tuning: Tuning,
+    style: PlayStyle,
+  ): Promise<void> {
+    this.clearAudio();
+    const ctx = await this.ensureRunning();
 
     const freqs = tuning === 'just'
       ? justFrequencies(root, pitches)

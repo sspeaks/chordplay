@@ -105,10 +105,7 @@ export default function App() {
   const handleStop = () => {
     playingRef.current = false;
     setIsPlaying(false);
-    if (playerRef.current) {
-      playerRef.current.stopCurrent();
-      playerRef.current = null;
-    }
+    playerRef.current?.stopCurrent();
   };
   
   const playSingleChord = (index: number) => {
