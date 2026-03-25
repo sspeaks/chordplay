@@ -98,7 +98,10 @@ export function smoothVoice(
       const centroid = placedMidis.reduce((a, b) => a + b, 0) / placedMidis.length;
       const gravityPenalty = GRAVITY_WEIGHT * Math.abs(centroid - gravityCenter);
 
-      const cost = totalCost + clusterPenalty + spreadPenalty + gravityPenalty;
+      // Heavily penalize same-octave doublings (unisons)
+      const unisonPenalty = (placedMidis.length - new Set(placedMidis).size) * 1000;
+
+      const cost = totalCost + clusterPenalty + spreadPenalty + gravityPenalty + unisonPenalty;
 
       if (cost < bestCost || (cost === bestCost && maxMove < bestMax)) {
         bestCost = cost;

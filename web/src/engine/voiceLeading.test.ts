@@ -77,6 +77,37 @@ describe('voiceChordSequence', () => {
   });
 });
 
+describe('smoothVoice rejects same-octave doublings', () => {
+  it('never places duplicate pitch classes in the same octave', () => {
+    // F Major has pitch classes ['F', 'A', 'C', 'F'] — two F's
+    const prev: Pitch[] = [
+      { pitchClass: 'C', octave: 3 },
+      { pitchClass: 'E', octave: 3 },
+      { pitchClass: 'G', octave: 3 },
+      { pitchClass: 'C', octave: 4 },
+    ];
+    const result = smoothVoice('equal', prev, ['F', 'A', 'C', 'F']);
+    const midis = result.map(pitchToMidi);
+    const uniqueMidis = new Set(midis);
+    expect(uniqueMidis.size).toBe(4);
+  });
+
+  it('avoids unisons even when gravity pulls toward them', () => {
+    // Gravity center between two candidate octaves can cause both
+    // duplicated pitch classes to land in the same octave
+    const prev: Pitch[] = [
+      { pitchClass: 'D', octave: 3 },
+      { pitchClass: 'Fs', octave: 3 },
+      { pitchClass: 'A', octave: 3 },
+      { pitchClass: 'D', octave: 4 },
+    ];
+    const result = smoothVoice('equal', prev, ['D', 'Fs', 'A', 'D'], { gravityCenter: 55 });
+    const midis = result.map(pitchToMidi);
+    const uniqueMidis = new Set(midis);
+    expect(uniqueMidis.size).toBe(4);
+  });
+});
+
 describe('smoothVoice with gravity/spread', () => {
   it('gravity pulls voicing toward center', () => {
     // Wide-spread prev voicing where gravity can influence octave choices

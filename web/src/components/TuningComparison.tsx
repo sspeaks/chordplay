@@ -17,7 +17,7 @@ export default function TuningComparison({ root, pitches, chordName }: TuningCom
   const noteData = pitches.map((pitch, idx) => {
     const justFreq = justFreqs[idx]!;
     const equalFreq = equalFreqs[idx]!;
-    const cents = 1200 * Math.log2(equalFreq / justFreq);
+    const cents = 1200 * Math.log2(justFreq / equalFreq);
     
     return {
       name: `${displayPitchName(pitch.pitchClass, root)}${pitch.octave}`,
@@ -35,20 +35,20 @@ export default function TuningComparison({ root, pitches, chordName }: TuningCom
       
       <div className="tuning-columns">
         <div className="tuning-col">
-          <div className="tuning-col-label just">Just Intonation</div>
+          <div className="tuning-col-label equal">Equal Temperament</div>
           {noteData.map((note, idx) => (
             <div key={idx} className="tuning-row">
               <span className="note-name">{note.name}</span>
-              <span className="freq-value">{note.justFreq.toFixed(2)} Hz</span>
+              <span className="freq-value">{note.equalFreq.toFixed(2)} Hz</span>
             </div>
           ))}
         </div>
         
         <div className="tuning-col">
-          <div className="tuning-col-label equal">Equal Temperament</div>
+          <div className="tuning-col-label just">Just Intonation</div>
           {noteData.map((note, idx) => (
             <div key={idx} className="tuning-row">
-              <span className="freq-value">{note.equalFreq.toFixed(2)} Hz</span>
+              <span className="freq-value">{note.justFreq.toFixed(2)} Hz</span>
               <span className={`cents ${Math.abs(note.cents) < 0.5 ? 'cents-zero' : ''}`}>
                 {note.cents >= 0 ? '+' : ''}{note.cents.toFixed(1)}¢
               </span>
