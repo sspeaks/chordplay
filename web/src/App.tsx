@@ -80,6 +80,10 @@ export default function App() {
     }
     const player = playerRef.current;
     
+    // Resume AudioContext synchronously inside the user gesture —
+    // iOS Safari requires this; an awaited resume() may never resolve.
+    player.warmUp();
+    
     // Start from currently selected chord
     const startIdx = currentChordIndex;
     const chordsToPlay = playableChords.slice(startIdx);
@@ -111,6 +115,7 @@ export default function App() {
   const playSingleChord = (index: number) => {
     if (index < 0 || index >= validChords.length) return;
     if (!playerRef.current) playerRef.current = new ChordPlayer();
+    playerRef.current.warmUp();
     const chord = validChords[index]!;
     const pitches = voicings[index]!;
     playerRef.current.playChord(chord.root, pitches, tempo, tuning, playStyle);

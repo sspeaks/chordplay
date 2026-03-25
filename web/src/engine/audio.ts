@@ -134,23 +134,6 @@ export async function renderSequenceOffline(
   return offCtx.startRendering();
 }
 
-// iOS Safari uses the "ambient" AVAudioSession for WebAudio, which may not
-// route oscillator output to the built-in speaker.  Playing through an
-// <audio> element forces the "playback" session, which drives the speaker.
-const SILENT_WAV = 'data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQIAAAAAAA==';
-let iosAudioUnlocked = false;
-
-function unlockIOSAudio(): void {
-  if (iosAudioUnlocked) return;
-  iosAudioUnlocked = true;
-  console.log('[audio] unlockIOSAudio: playing silent WAV');
-  try {
-    const a = new Audio(SILENT_WAV);
-    a.play().then(() => console.log('[audio] silent WAV play succeeded'))
-            .catch((e) => console.warn('[audio] silent WAV play rejected:', e));
-  } catch (e) { console.warn('[audio] silent WAV creation failed:', e); }
-}
-
 // Manages Web Audio playback for chord voicings
 export class ChordPlayer {
   private ctx: AudioContext | null = null;
@@ -168,25 +151,42 @@ export class ChordPlayer {
     return this.ctx;
   }
 
-  private async ensureRunning(): Promise<AudioContext> {
-    unlockIOSAudio();
+  // Call from a user-gesture handler (click/tap) to unlock the
+  // AudioContext on iOS Safari where resume() requires a gesture.
+  warmUp(): void {
     const ctx = this.getContext();
-    console.log('[audio] ensureRunning: state=%s sampleRate=%d baseLatency=%s',
-      ctx.state, ctx.sampleRate, (ctx as any).baseLatency);
-    if (ctx.state !== 'running') {
-      try {
-        await ctx.resume();
-        console.log('[audio] after resume: state=%s', ctx.state);
-      } catch (e) {
-        console.error('[audio] resume failed, recreating context:', e);
-        // Context is unrecoverable — create a fresh one and retry.
-        this.ctx?.close().catch(() => {});
-        this.ctx = null;
-        const fresh = this.getContext();
-        await fresh.resume();
-        console.log('[audio] fresh context state=%s', fresh.state);
-        return fresh;
-      }
+    console.log('[audio] warmUp: state=%s', ctx.state);
+    if (ctx.state === 'suspended') {
+      ctx.resume().then(
+        () => console.log('[audio] warmUp resume resolved, state=%s', ctx.state),
+        (e) => console.warn('[audio] warmUp resume rejected:', e),
+      );
+    }
+  }
+
+  private async ensureRunning(): Promise<AudioContext> {
+    const ctx = this.getContext();
+    console.log('[audio] ensureRunning: state=%s sampleRate=%d',
+      ctx.state, ctx.sampleRate);
+    if (ctx.state === 'running') return ctx;
+
+    // Attempt resume with a timeout — on iOS the promise may never
+    // resolve if the gesture was already consumed.
+    try {
+      await Promise.race([
+        ctx.resume(),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('resume timeout')), 500)),
+      ]);
+      console.log('[audio] after resume: state=%s', ctx.state);
+    } catch (e) {
+      console.error('[audio] resume failed, recreating context:', e);
+      this.ctx?.close().catch(() => {});
+      this.ctx = null;
+      const fresh = this.getContext();
+      await fresh.resume();
+      console.log('[audio] fresh context state=%s', fresh.state);
+      return fresh;
     }
     return ctx;
   }
