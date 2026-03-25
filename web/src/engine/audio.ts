@@ -144,7 +144,9 @@ export class ChordPlayer {
 
   private getContext(): AudioContext {
     if (!this.ctx || this.ctx.state === 'closed') {
-      this.ctx = new AudioContext({ sampleRate: SAMPLE_RATE });
+      // Don't specify sampleRate — iOS Safari silently fails when the
+      // requested rate doesn't match the device's native hardware rate.
+      this.ctx = new AudioContext();
     }
     return this.ctx;
   }
@@ -158,7 +160,17 @@ export class ChordPlayer {
   ): Promise<void> {
     this.clearAudio();
     const ctx = this.getContext();
-    if (ctx.state === 'suspended') await ctx.resume();
+    if (ctx.state !== 'running') {
+      try {
+        await ctx.resume();
+      } catch {
+        // Context is unrecoverable — create a fresh one and retry.
+        this.ctx?.close().catch(() => {});
+        this.ctx = null;
+        const fresh = this.getContext();
+        await fresh.resume();
+      }
+    }
 
     const freqs = tuning === 'just'
       ? justFrequencies(root, pitches)

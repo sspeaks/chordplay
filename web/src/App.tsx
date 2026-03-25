@@ -71,8 +71,14 @@ export default function App() {
     setIsPlaying(true);
     playingRef.current = true;
     
-    const player = new ChordPlayer();
-    playerRef.current = player;
+    // Reuse existing player to avoid leaking AudioContexts.
+    // iOS Safari limits the total number of contexts (~4-6).
+    if (playerRef.current) {
+      playerRef.current.stopCurrent();
+    } else {
+      playerRef.current = new ChordPlayer();
+    }
+    const player = playerRef.current;
     
     // Start from currently selected chord
     const startIdx = currentChordIndex;
