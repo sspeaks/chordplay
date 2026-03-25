@@ -193,12 +193,46 @@ export default function App() {
     ? `${currentChord.root} ${currentChord.quality}${currentChord.inversion !== null ? ` (inv ${currentChord.inversion})` : ''}` 
     : '';
   
+  const [debugLog, setDebugLog] = useState<string[]>([]);
+  const showDebug = new URLSearchParams(window.location.search).has('debug');
+
+  // Capture console.log/warn/error lines matching [audio]
+  useEffect(() => {
+    if (!showDebug) return;
+    const orig = { log: console.log, warn: console.warn, error: console.error };
+    const capture = (level: string, origFn: typeof console.log) =>
+      (...args: any[]) => {
+        origFn.apply(console, args);
+        const msg = args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
+        if (msg.includes('[audio]')) {
+          setDebugLog(prev => [...prev.slice(-19), `${level} ${msg}`]);
+        }
+      };
+    console.log = capture('LOG', orig.log);
+    console.warn = capture('WARN', orig.warn);
+    console.error = capture('ERR', orig.error);
+    return () => { Object.assign(console, orig); };
+  }, [showDebug]);
+
   return (
     <div className="app">
       <header className="app-header">
         <h1>♩ ChordPlay</h1>
         <p className="subtitle">Barbershop Harmony Explorer</p>
       </header>
+      
+      {showDebug && (
+        <div style={{
+          position: 'fixed', bottom: 0, left: 0, right: 0, maxHeight: '40vh',
+          overflow: 'auto', background: '#111', color: '#0f0', fontSize: '11px',
+          fontFamily: 'monospace', padding: '6px', zIndex: 9999, borderTop: '2px solid #0f0',
+        }}>
+          <strong>🔊 Audio Debug</strong>
+          <button onClick={() => setDebugLog([])} style={{ marginLeft: 8, fontSize: 10 }}>Clear</button>
+          {debugLog.length === 0 && <div style={{ color: '#888' }}>Tap Play to see audio state…</div>}
+          {debugLog.map((l, i) => <div key={i}>{l}</div>)}
+        </div>
+      )}
       
       <Toolbar
         voiceLeading={voiceLeading}

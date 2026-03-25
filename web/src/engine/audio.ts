@@ -143,10 +143,12 @@ let iosAudioUnlocked = false;
 function unlockIOSAudio(): void {
   if (iosAudioUnlocked) return;
   iosAudioUnlocked = true;
+  console.log('[audio] unlockIOSAudio: playing silent WAV');
   try {
     const a = new Audio(SILENT_WAV);
-    a.play().catch(() => {});
-  } catch { /* non-browser environment */ }
+    a.play().then(() => console.log('[audio] silent WAV play succeeded'))
+            .catch((e) => console.warn('[audio] silent WAV play rejected:', e));
+  } catch (e) { console.warn('[audio] silent WAV creation failed:', e); }
 }
 
 // Manages Web Audio playback for chord voicings
@@ -169,15 +171,20 @@ export class ChordPlayer {
   private async ensureRunning(): Promise<AudioContext> {
     unlockIOSAudio();
     const ctx = this.getContext();
+    console.log('[audio] ensureRunning: state=%s sampleRate=%d baseLatency=%s',
+      ctx.state, ctx.sampleRate, (ctx as any).baseLatency);
     if (ctx.state !== 'running') {
       try {
         await ctx.resume();
-      } catch {
+        console.log('[audio] after resume: state=%s', ctx.state);
+      } catch (e) {
+        console.error('[audio] resume failed, recreating context:', e);
         // Context is unrecoverable — create a fresh one and retry.
         this.ctx?.close().catch(() => {});
         this.ctx = null;
         const fresh = this.getContext();
         await fresh.resume();
+        console.log('[audio] fresh context state=%s', fresh.state);
         return fresh;
       }
     }
@@ -199,7 +206,11 @@ export class ChordPlayer {
       : equalFrequencies(pitches);
 
     const now = ctx.currentTime;
+    console.log('[audio] playChord: scheduling %d freqs at t=%f, ctx.state=%s, destination=%o',
+      freqs.length, now, ctx.state, ctx.destination);
     this.activeNodes = scheduleChord(ctx, ctx.destination, freqs, now, duration, style);
+    console.log('[audio] scheduled %d oscillators, %d gains',
+      this.activeNodes.oscillators.length, this.activeNodes.gains.length);
 
     const total = chordDuration(freqs.length, duration, style);
     return new Promise(resolve => {
