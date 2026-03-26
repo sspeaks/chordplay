@@ -130,9 +130,7 @@ export default function Toolbar({
         labels={{ standard: 'Standard', roman: 'Roman' }}
       />
 
-      {notationMode === 'roman' && (
-        <KeySelector selectedKey={selectedKey} onKeyChange={onKeyChange} />
-      )}
+      <KeySelector selectedKey={selectedKey} onKeyChange={onKeyChange} />
 
       <ToggleGroup
         label="Voice Leading"

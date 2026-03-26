@@ -1,18 +1,23 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { VoiceLeading, PlayStyle, Tuning, ChordSymbol, Pitch, PitchClass, NotationMode, KeySignature, VoiceLeadingOptions } from './types';
 import { parseChordSequence } from './engine/parser';
 import { parseRomanSequence } from './engine/romanParser';
 import { chordTextToRoman, romanTextToStandard } from './engine/romanConverter';
-import { voiceChordSequence } from './engine/voiceLeading';
+import { voiceChordSequence, smoothVoice } from './engine/voiceLeading';
+import { voiceChord, chordPitchClasses } from './engine/musicTheory';
 import { DEFAULTS, encodeUrlState, decodeUrlState, AppState } from './engine/urlState';
 import { ChordPlayer, renderSequenceOffline } from './engine/audio';
 import { encodeWav } from './engine/wav';
+import { inferKey } from './engine/keyInference';
+import { insertChordAfterIndex } from './engine/chordSuggestions';
 import Toolbar from './components/Toolbar';
 import ChordInput from './components/ChordInput';
 import PlaybackControls from './components/PlaybackControls';
 import NoteCards from './components/NoteCards';
 import TuningComparison from './components/TuningComparison';
 import SyntaxReference from './components/SyntaxReference';
+import KeyBadge from './components/KeyBadge';
+import ChordSuggestions from './components/ChordSuggestions';
 
 const initialUrlState = decodeUrlState(window.location.hash);
 
@@ -30,6 +35,8 @@ export default function App() {
   const [selectedKey, setSelectedKey] = useState<KeySignature>(initialUrlState.selectedKey ?? DEFAULTS.selectedKey);
   const [gravityCenter, setGravityCenter] = useState(initialUrlState.gravityCenter ?? DEFAULTS.gravityCenter);
   const [targetSpread, setTargetSpread] = useState(initialUrlState.targetSpread ?? DEFAULTS.targetSpread);
+  const [keyManuallySet, setKeyManuallySet] = useState(false);
+  const [suggestionsOpen, setSuggestionsOpen] = useState(true);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -49,6 +56,20 @@ export default function App() {
   const validChords: ChordSymbol[] = parseResults
     .filter(r => r.ok)
     .map(r => (r as { ok: true; value: ChordSymbol }).value);
+  
+  // Auto-infer key when 2+ valid chords exist and key hasn't been manually set
+  const inferredKey = useMemo(() => {
+    if (validChords.length >= 2) {
+      return inferKey(validChords);
+    }
+    return null;
+  }, [validChords]);
+
+  useEffect(() => {
+    if (!keyManuallySet && inferredKey) {
+      setSelectedKey(inferredKey);
+    }
+  }, [inferredKey, keyManuallySet]);
   
   const smoothMode = voiceLeading === 'smooth' ? 'equal' : voiceLeading === 'bass' ? 'bass' : null;
   const voiceLeadingOptions: VoiceLeadingOptions = { gravityCenter, targetSpread };
@@ -175,6 +196,7 @@ export default function App() {
       setChordText(chordTextToRoman(standard, newKey));
     }
     setSelectedKey(newKey);
+    setKeyManuallySet(true);
   }, [notationMode, chordText, selectedKey]);
 
   // Arrow key navigation (when textarea not focused)
@@ -188,6 +210,29 @@ export default function App() {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [handlePrev, handleNext]);
+
+  const handlePreviewChord = useCallback((chord: ChordSymbol) => {
+    if (!playerRef.current) playerRef.current = new ChordPlayer();
+    playerRef.current.warmUp();
+    const pitches = currentVoicing
+      ? smoothVoice(
+          smoothMode ?? 'equal',
+          currentVoicing,
+          chordPitchClasses(chord.root, chord.quality),
+          voiceLeadingOptions,
+        )
+      : voiceChord(chord.root, chord.quality, 0);
+    playerRef.current.playChord(chord.root, pitches, tempo, tuning, playStyle);
+  }, [currentVoicing, smoothMode, voiceLeadingOptions, tempo, tuning, playStyle]);
+
+  const handleInsertChord = useCallback((chordText_: string) => {
+    const textToInsert = notationMode === 'roman'
+      ? chordTextToRoman(chordText_, selectedKey)
+      : chordText_;
+    const newText = insertChordAfterIndex(chordText, currentChordIndex, textToInsert, parseResults);
+    setChordText(newText);
+    setCurrentChordIndex(currentChordIndex + 1);
+  }, [chordText, currentChordIndex, parseResults, notationMode, selectedKey]);
   
   const currentRoot: PitchClass | null = currentChord?.root || null;
   const currentPitches: [Pitch, Pitch, Pitch, Pitch] | null = 
@@ -260,12 +305,30 @@ export default function App() {
         isExporting={isExporting}
       />
       
-      <ChordInput
-        value={chordText}
-        onChange={setChordText}
-        currentChordIndex={currentChordIndex}
+      <div className="chord-input-wrapper">
+        <ChordInput
+          value={chordText}
+          onChange={setChordText}
+          currentChordIndex={currentChordIndex}
+          isPlaying={isPlaying}
+          parseResults={parseResults}
+        />
+        <KeyBadge
+          selectedKey={selectedKey}
+          isAutoInferred={!keyManuallySet}
+          onKeyChange={handleKeyChange}
+          onResetToAuto={() => setKeyManuallySet(false)}
+        />
+      </div>
+
+      <ChordSuggestions
+        currentChord={currentChord}
+        selectedKey={selectedKey}
         isPlaying={isPlaying}
-        parseResults={parseResults}
+        isOpen={suggestionsOpen}
+        onToggle={() => setSuggestionsOpen(!suggestionsOpen)}
+        onPreview={handlePreviewChord}
+        onInsert={handleInsertChord}
       />
       
       <PlaybackControls
