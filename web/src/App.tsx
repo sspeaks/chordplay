@@ -199,17 +199,18 @@ export default function App() {
     setKeyManuallySet(true);
   }, [notationMode, chordText, selectedKey]);
 
-  // Arrow key navigation (when textarea not focused)
+  // Keyboard shortcuts (when textarea not focused)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === 'TEXTAREA' || tag === 'INPUT') return;
+      if (tag === 'TEXTAREA' || tag === 'INPUT' || tag === 'SELECT') return;
       if (e.key === 'ArrowLeft') { e.preventDefault(); handlePrev(); }
       if (e.key === 'ArrowRight') { e.preventDefault(); handleNext(); }
+      if (e.key === ' ') { e.preventDefault(); playSingleChord(currentChordIndex); }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [handlePrev, handleNext]);
+  }, [handlePrev, handleNext, currentChordIndex]);
 
   const handlePreviewChord = useCallback((chord: ChordSymbol) => {
     if (!playerRef.current) playerRef.current = new ChordPlayer();
