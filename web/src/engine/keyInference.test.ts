@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { inferKey } from './keyInference';
-import type { ChordSymbol, KeySignature } from '../types';
+import type { ChordSymbol } from '../types';
 
 function chord(root: string, quality: string = 'Major'): ChordSymbol {
   return { root: root as any, quality: quality as any, inversion: null };

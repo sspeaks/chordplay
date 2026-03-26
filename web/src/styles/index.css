@@ -650,6 +650,250 @@ body {
   font-size: 0.85rem;
 }
 
+/* Key Badge */
+.key-badge-container {
+  position: relative;
+  display: inline-block;
+  align-self: flex-end;
+}
+
+.key-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: #1e1e30;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #e0e0e0;
+  font-family: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.key-badge:hover {
+  border-color: #4a6fa5;
+}
+
+.key-badge-label {
+  color: #888;
+}
+
+.key-badge-value {
+  font-weight: 600;
+}
+
+.key-badge-auto {
+  font-size: 0.6rem;
+  color: #2a9d8f;
+  font-style: italic;
+  opacity: 0.8;
+}
+
+.key-badge.manual .key-badge-value {
+  color: #4a6fa5;
+}
+
+.key-badge-dropdown {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 0;
+  background: #1e1e30;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 8px;
+  z-index: 50;
+  min-width: 260px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.key-badge-reset {
+  width: 100%;
+  padding: 6px 8px;
+  margin-bottom: 6px;
+  background: rgba(42, 157, 143, 0.1);
+  border: 1px solid rgba(42, 157, 143, 0.3);
+  border-radius: 4px;
+  color: #2a9d8f;
+  font-family: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.key-badge-reset:hover {
+  background: rgba(42, 157, 143, 0.2);
+}
+
+.key-badge-section {
+  margin-bottom: 6px;
+}
+
+.key-badge-section:last-child {
+  margin-bottom: 0;
+}
+
+.key-badge-section-label {
+  font-size: 0.65rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+  padding-left: 4px;
+}
+
+.key-badge-option {
+  display: inline-block;
+  padding: 3px 8px;
+  margin: 2px;
+  background: #262638;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: #e0e0e0;
+  font-family: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.key-badge-option:hover {
+  border-color: #4a6fa5;
+}
+
+.key-badge-option.active {
+  background: rgba(74, 111, 165, 0.25);
+  border-color: #4a6fa5;
+  color: #fff;
+}
+
+/* Chord Input Wrapper */
+.chord-input-wrapper {
+  position: relative;
+  margin-bottom: 1rem;
+}
+
+.chord-input-wrapper .key-badge-container {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  z-index: 5;
+}
+
+/* Chord Suggestions Panel */
+.suggestions-panel {
+  background: #1a1a2e;
+  border: 1px solid #262638;
+  border-radius: 10px;
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+
+.suggestions-panel.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.suggestions-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  color: #888;
+  font-family: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.suggestions-header:hover {
+  color: #e0e0e0;
+}
+
+.suggestions-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.suggestions-current {
+  background: rgba(74, 111, 165, 0.2);
+  color: #4a6fa5;
+  padding: 1px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.suggestions-toggle {
+  font-size: 0.7rem;
+  color: #666;
+}
+
+.suggestions-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 16px 12px;
+}
+
+.suggestion-chip {
+  display: inline-flex;
+  align-items: stretch;
+  background: #262638;
+  border: 1px solid #333;
+  border-radius: 6px;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+
+.suggestion-chip:hover {
+  border-color: #4a6fa5;
+}
+
+.chip-play {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  background: none;
+  border: none;
+  color: #e0e0e0;
+  font-family: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.chip-play:hover:not(:disabled) {
+  background: rgba(74, 111, 165, 0.15);
+}
+
+.chip-play-icon {
+  font-size: 0.55rem;
+  color: #4a6fa5;
+}
+
+.chip-add {
+  display: flex;
+  align-items: center;
+  padding: 6px 8px;
+  background: none;
+  border: none;
+  border-left: 1px solid #333;
+  color: #666;
+  font-family: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.chip-add:hover:not(:disabled) {
+  color: #2a9d8f;
+  background: rgba(42, 157, 143, 0.1);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .app {
@@ -687,5 +931,23 @@ body {
 
   .voice-leading-options {
     width: 100%;
+  }
+
+  .suggestions-chips {
+    gap: 4px;
+  }
+
+  .chip-play {
+    padding: 5px 8px;
+    font-size: 0.75rem;
+  }
+
+  .chip-add {
+    padding: 5px 6px;
+    font-size: 0.7rem;
+  }
+
+  .key-badge-dropdown {
+    min-width: 220px;
   }
 }
