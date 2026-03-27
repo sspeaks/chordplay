@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { smoothVoice, voiceChordSequence } from './voiceLeading';
+import { smoothVoice, voiceChordSequence, assignOctaves } from './voiceLeading';
 import { pitchToMidi, voiceChord, midiToNoteName } from './musicTheory';
 import type { Pitch, PitchClass, ChordSymbol } from '../types';
 
@@ -233,5 +233,54 @@ describe('voiceChordSequence with gravity/spread', () => {
     const result = voiceChordSequence('equal', chords);
     expect(result).toHaveLength(2);
     result.forEach(v => expect(v).toHaveLength(4));
+  });
+});
+
+describe('assignOctaves', () => {
+  it('assigns ascending octaves centered on gravity', () => {
+    // (C E G B) centered on A3 (MIDI 57)
+    const pitches = assignOctaves(['C', 'E', 'G', 'B'], 57);
+    const midis = pitches.map(pitchToMidi);
+    // Each note must be higher than the previous
+    for (let i = 1; i < midis.length; i++) {
+      expect(midis[i]!).toBeGreaterThan(midis[i - 1]!);
+    }
+    // Mean should be close to gravity center
+    const mean = midis.reduce((a, b) => a + b, 0) / midis.length;
+    expect(Math.abs(mean - 57)).toBeLessThan(12);
+  });
+
+  it('handles descending pitch class order by wrapping octaves', () => {
+    // (G E C B) — G lower, then E, C, B ascending
+    const pitches = assignOctaves(['G', 'E', 'C', 'B'], 57);
+    const midis = pitches.map(pitchToMidi);
+    for (let i = 1; i < midis.length; i++) {
+      expect(midis[i]!).toBeGreaterThan(midis[i - 1]!);
+    }
+  });
+
+  it('returns exactly 4 pitches', () => {
+    const pitches = assignOctaves(['F', 'A', 'C', 'Ds'], 57);
+    expect(pitches.length).toBe(4);
+  });
+});
+
+describe('voiceChordSequence with explicitVoicing', () => {
+  it('uses explicit voicing and skips voice leading', () => {
+    const chords: ChordSymbol[] = [
+      { root: 'C', quality: 'Maj7', inversion: null },
+      { root: 'F', quality: 'Dom7', inversion: 0, explicitVoicing: ['F', 'A', 'C', 'Ds'] },
+      { root: 'D', quality: 'Min7', inversion: null },
+    ];
+    const voicings = voiceChordSequence('equal', chords);
+    expect(voicings.length).toBe(3);
+
+    // Second voicing should use explicit notes
+    expect(voicings[1]!.map(p => p.pitchClass)).toEqual(['F', 'A', 'C', 'Ds']);
+    // And ascending
+    const explicitMidis = voicings[1]!.map(pitchToMidi);
+    for (let i = 1; i < explicitMidis.length; i++) {
+      expect(explicitMidis[i]!).toBeGreaterThan(explicitMidis[i - 1]!);
+    }
   });
 });

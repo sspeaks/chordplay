@@ -114,29 +114,64 @@ export function smoothVoice(
   return bestPlaced;
 }
 
+export function assignOctaves(pcs: PitchClass[], gravityCenter: number): Pitch[] {
+  let bestPitches: Pitch[] = [];
+  let bestDiff = Infinity;
+
+  for (let startOct = 2; startOct <= 5; startOct++) {
+    const pitches: Pitch[] = [];
+    let prevMidi = -Infinity;
+
+    for (const pc of pcs) {
+      const pcInt = pitchClassToInt(pc);
+      let midi = (startOct + 1) * 12 + pcInt;
+      while (midi <= prevMidi) midi += 12;
+      pitches.push(midiToPitch(midi));
+      prevMidi = midi;
+    }
+
+    const mean = pitches.reduce((sum, p) => sum + pitchToMidi(p), 0) / pitches.length;
+    const diff = Math.abs(mean - gravityCenter);
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      bestPitches = pitches;
+    }
+  }
+
+  return bestPitches;
+}
+
 export function voiceChordSequence(
   mode: SmoothMode | null,
   chords: ChordSymbol[],
   options?: VoiceLeadingOptions,
 ): Pitch[][] {
   if (chords.length === 0) return [];
-
-  if (mode === null) {
-    return chords.map(c => voiceChord(c.root, c.quality, c.inversion ?? 0));
-  }
-
   const { gravityCenter = DEFAULT_GRAVITY_CENTER } = options ?? {};
 
-  const first = chords[0]!;
-  const baseVoicing = voiceChord(first.root, first.quality, first.inversion ?? 0);
+  function voiceExplicit(chord: ChordSymbol): Pitch[] {
+    return assignOctaves(chord.explicitVoicing!, gravityCenter);
+  }
 
-  // Shift first voicing toward gravity center
-  const baseMidis = baseVoicing.map(pitchToMidi);
-  const baseCentroid = baseMidis.reduce((a, b) => a + b, 0) / baseMidis.length;
-  const shiftSemitones = Math.round((gravityCenter - baseCentroid) / 12) * 12;
-  const firstVoicing = shiftSemitones === 0
-    ? baseVoicing
-    : baseVoicing.map(p => midiToPitch(pitchToMidi(p) + shiftSemitones));
+  if (mode === null) {
+    return chords.map(c =>
+      c.explicitVoicing ? voiceExplicit(c) : voiceChord(c.root, c.quality, c.inversion ?? 0)
+    );
+  }
+
+  const first = chords[0]!;
+  let firstVoicing: Pitch[];
+  if (first.explicitVoicing) {
+    firstVoicing = voiceExplicit(first);
+  } else {
+    const baseVoicing = voiceChord(first.root, first.quality, first.inversion ?? 0);
+    const baseMidis = baseVoicing.map(pitchToMidi);
+    const baseCentroid = baseMidis.reduce((a, b) => a + b, 0) / baseMidis.length;
+    const shiftSemitones = Math.round((gravityCenter - baseCentroid) / 12) * 12;
+    firstVoicing = shiftSemitones === 0
+      ? baseVoicing
+      : baseVoicing.map(p => midiToPitch(pitchToMidi(p) + shiftSemitones));
+  }
 
   const result: Pitch[][] = [firstVoicing];
 
@@ -144,7 +179,9 @@ export function voiceChordSequence(
   for (let i = 1; i < chords.length; i++) {
     const chord = chords[i]!;
     let voicing: Pitch[];
-    if (chord.inversion !== null) {
+    if (chord.explicitVoicing) {
+      voicing = voiceExplicit(chord);
+    } else if (chord.inversion !== null) {
       voicing = voiceChord(chord.root, chord.quality, chord.inversion);
     } else {
       voicing = smoothVoice(mode, prev, chordPitchClasses(chord.root, chord.quality), options);
