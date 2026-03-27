@@ -92,3 +92,22 @@ describe('roundtrip: standard → roman → standard', () => {
     });
   }
 });
+
+describe('spelled chords pass through notation conversion', () => {
+  it('chordTextToRoman preserves spelled chords', () => {
+    expect(chordTextToRoman('Cmaj7 (F A C Eb) Dm7', Cmaj)).toBe('Imaj7 (F A C Eb) iim7');
+  });
+
+  it('romanTextToStandard preserves spelled chords', () => {
+    expect(romanTextToStandard('Imaj7 (F A C Eb) iim7', Cmaj)).toBe('Cmaj7 (F A C Eb) Dm7');
+  });
+
+  it('roundtrips with mixed spelled and standard chords', () => {
+    const input = 'Cmaj7 (F A C Eb) Dm7 G7';
+    const roman = chordTextToRoman(input, Cmaj);
+    const back = romanTextToStandard(roman, Cmaj);
+    const originalChords = parseChordSequence(input).filter(r => r.ok).map(r => (r as any).value);
+    const roundtrippedChords = parseChordSequence(back).filter(r => r.ok).map(r => (r as any).value);
+    expect(roundtrippedChords).toEqual(originalChords);
+  });
+});

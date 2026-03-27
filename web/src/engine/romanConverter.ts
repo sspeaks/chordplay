@@ -1,5 +1,5 @@
 import type { ChordSymbol, ChordType, KeySignature } from '../types';
-import { parseChord } from './parser';
+import { parseChord, tokenizeChordInput } from './parser';
 import { parseRomanChord } from './romanParser';
 import { pitchClassToInt } from './musicTheory';
 import {
@@ -66,22 +66,25 @@ function detectSecondaryDominant(
 export function chordTextToRoman(text: string, key: KeySignature): string {
   if (text.trim() === '') return text;
 
-  const parts = text.split(/(\s+)/);
+  const tokens = tokenizeChordInput(text);
   const chordTokens: { index: number; chord: ChordSymbol }[] = [];
 
-  for (let i = 0; i < parts.length; i++) {
-    if (/^\s*$/.test(parts[i]!)) continue;
-    const result = parseChord(parts[i]!);
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i]!;
+    if (/^\s+$/.test(t) || t.startsWith('(')) continue;
+    const result = parseChord(t);
     if (result.ok) {
       chordTokens.push({ index: i, chord: result.value });
     }
   }
 
-  return parts.map((part, i) => {
-    if (/^\s*$/.test(part)) return part;
+  return tokens.map((token, i) => {
+    if (/^\s+$/.test(token)) return token;
+    // Pass through spelled chords unchanged
+    if (token.startsWith('(')) return token;
 
-    const result = parseChord(part);
-    if (!result.ok) return part;
+    const result = parseChord(token);
+    if (!result.ok) return token;
 
     const chord = result.value;
     const tokenIdx = chordTokens.findIndex(ct => ct.index === i);
@@ -112,13 +115,15 @@ export function romanTextToStandard(text: string, key: KeySignature): string {
   if (text.trim() === '') return text;
 
   const useSharps = isSharpKey(key);
-  const parts = text.split(/(\s+)/);
+  const tokens = tokenizeChordInput(text);
 
-  return parts.map(part => {
-    if (/^\s*$/.test(part)) return part;
+  return tokens.map(token => {
+    if (/^\s+$/.test(token)) return token;
+    // Pass through spelled chords unchanged
+    if (token.startsWith('(')) return token;
 
-    const result = parseRomanChord(part, key);
-    if (!result.ok) return part;
+    const result = parseRomanChord(token, key);
+    if (!result.ok) return token;
 
     const chord = result.value;
     const rootName = pcToStandardName(chord.root, useSharps);
