@@ -36,7 +36,7 @@ export default function App() {
   const [gravityCenter, setGravityCenter] = useState(initialUrlState.gravityCenter ?? DEFAULTS.gravityCenter);
   const [targetSpread, setTargetSpread] = useState(initialUrlState.targetSpread ?? DEFAULTS.targetSpread);
   const [keyManuallySet, setKeyManuallySet] = useState(false);
-  const [suggestionsOpen, setSuggestionsOpen] = useState(true);
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -321,16 +321,6 @@ export default function App() {
           onResetToAuto={() => setKeyManuallySet(false)}
         />
       </div>
-
-      <ChordSuggestions
-        currentChord={currentChord}
-        selectedKey={selectedKey}
-        isPlaying={isPlaying}
-        isOpen={suggestionsOpen}
-        onToggle={() => setSuggestionsOpen(!suggestionsOpen)}
-        onPreview={handlePreviewChord}
-        onInsert={handleInsertChord}
-      />
       
       <PlaybackControls
         isPlaying={isPlaying}
@@ -355,6 +345,16 @@ export default function App() {
         root={currentRoot}
         pitches={currentPitches}
         chordName={chordName}
+      />
+
+      <ChordSuggestions
+        currentChord={currentChord}
+        selectedKey={selectedKey}
+        isPlaying={isPlaying}
+        isOpen={suggestionsOpen}
+        onToggle={() => setSuggestionsOpen(!suggestionsOpen)}
+        onPreview={handlePreviewChord}
+        onInsert={handleInsertChord}
       />
       
       <SyntaxReference
