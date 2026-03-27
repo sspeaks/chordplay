@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { parseNoteName, identifyChord, parseSpelledChord } from './chordSpelling';
-import type { PitchClass } from '../types';
 
 describe('parseNoteName', () => {
   it('parses natural notes', () => {
