@@ -1,5 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import type { ParseResult, ChordSymbol } from '../types';
+import { tokenizeChordInput } from '../engine/parser';
+import { chordDisplayName } from '../engine/chordSpelling';
 
 interface ChordInputProps {
   value: string;
@@ -38,21 +40,24 @@ export default function ChordInput({
   }, []);
 
   const segments = useMemo(() => {
-    const parts = value.split(/(\s+)/);
+    const tokens = tokenizeChordInput(value);
     let chordIdx = 0;
 
-    return parts.map(part => {
-      if (/^\s*$/.test(part)) {
-        return { text: part, isChord: false, isValid: true, validIndex: -1 };
+    return tokens.map(token => {
+      if (/^\s+$/.test(token)) {
+        return { text: token, isChord: false, isValid: true, isWarning: false, validIndex: -1, tooltip: undefined as string | undefined };
       }
       const result = parseResults[chordIdx];
       const isValid = result?.ok ?? false;
-      // Map this token index to its position among valid chords
+      const chord = isValid ? (result as { ok: true; value: ChordSymbol }).value : null;
+      const isWarning = !!(chord?.warning);
+      const hasExplicit = !!(chord?.explicitVoicing);
+      const tooltip = hasExplicit ? chordDisplayName(chord!) : undefined;
       const validIndex = isValid
         ? parseResults.slice(0, chordIdx + 1).filter(r => r.ok).length - 1
         : -1;
       chordIdx++;
-      return { text: part, isChord: true, isValid, validIndex };
+      return { text: token, isChord: true, isValid, isWarning, validIndex, tooltip };
     });
   }, [value, parseResults]);
 
@@ -78,9 +83,10 @@ export default function ChordInput({
             const cls = [
               'chord-token',
               isActive ? 'chord-active' : '',
+              seg.isWarning ? 'chord-warning' : '',
               !seg.isValid ? 'chord-invalid' : '',
             ].filter(Boolean).join(' ');
-            return <span key={i} className={cls}>{seg.text}</span>;
+            return <span key={i} className={cls} title={seg.tooltip}>{seg.text}</span>;
           })}
         </div>
       )}
