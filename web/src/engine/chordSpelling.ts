@@ -76,3 +76,55 @@ export function identifyChord(pcs: PitchClass[]): ChordMatch | null {
 
   return matches[0]!;
 }
+
+export function parseSpelledChord(input: string): ParseResult<ChordSymbol> {
+  // Strip parentheses
+  let inner = input.trim();
+  if (inner.startsWith('(')) inner = inner.slice(1);
+  if (inner.endsWith(')')) inner = inner.slice(0, -1);
+  inner = inner.trim();
+
+  if (inner.length === 0) {
+    return { ok: false, error: 'Empty spelled chord' };
+  }
+
+  const noteTokens = inner.split(/\s+/);
+  if (noteTokens.length !== 4) {
+    return { ok: false, error: `Expected 4 notes, got ${noteTokens.length}` };
+  }
+
+  const pcs: PitchClass[] = [];
+  for (const token of noteTokens) {
+    const pc = parseNoteName(token);
+    if (pc === null) {
+      return { ok: false, error: `Invalid note: '${token}'` };
+    }
+    pcs.push(pc);
+  }
+
+  const match = identifyChord(pcs);
+
+  if (match === null) {
+    // Unrecognized — return with warning
+    return {
+      ok: true,
+      value: {
+        root: pcs[0]!,
+        quality: 'Major',
+        inversion: 0,
+        explicitVoicing: pcs,
+        warning: true,
+      },
+    };
+  }
+
+  return {
+    ok: true,
+    value: {
+      root: match.root,
+      quality: match.quality,
+      inversion: match.inversion,
+      explicitVoicing: pcs,
+    },
+  };
+}
