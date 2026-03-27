@@ -135,6 +135,12 @@ describe('parseRomanChord', () => {
   it('V/IV in C = C Major (dominant of F)', () => {
     expectChord('V/IV', Cmaj, { root: 'C', quality: 'Major', inversion: null });
   });
+  it('V7/bIII in C = Bb7 (dominant of Eb)', () => {
+    expectChord('V7/bIII', Cmaj, { root: 'As', quality: 'Dom7', inversion: null });
+  });
+  it('V7/#IV in C = C#7 (dominant of F#)', () => {
+    expectChord('V7/#IV', Cmaj, { root: 'Cs', quality: 'Dom7', inversion: null });
+  });
   it('1V7 in C = G Dom7, inversion 1', () => {
     expectChord('1V7', Cmaj, { root: 'G', quality: 'Dom7', inversion: 1 });
   });

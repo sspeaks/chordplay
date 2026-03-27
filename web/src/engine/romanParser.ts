@@ -61,11 +61,20 @@ export function parseRomanChord(input: string, key: KeySignature): ParseResult<C
 
   let root: PitchClass;
   if (secondaryTarget) {
-    const targetResult = parseRomanNumeral(secondaryTarget);
+    let targetPos = 0;
+    let targetAccidental = 0;
+    if (secondaryTarget[0] === '#') {
+      targetAccidental = 1;
+      targetPos = 1;
+    } else if (secondaryTarget[0] === 'b') {
+      targetAccidental = -1;
+      targetPos = 1;
+    }
+    const targetResult = parseRomanNumeral(secondaryTarget.slice(targetPos));
     if (!targetResult || targetResult.rest !== '') {
       return { ok: false, error: `Invalid secondary target: '${secondaryTarget}'` };
     }
-    const targetPC = scaleDegreeToPC(key, targetResult.degree, 0);
+    const targetPC = scaleDegreeToPC(key, targetResult.degree, targetAccidental);
     const tempKey: KeySignature = { root: targetPC, quality: 'major' };
     root = scaleDegreeToPC(tempKey, degree, accidental);
   } else {
