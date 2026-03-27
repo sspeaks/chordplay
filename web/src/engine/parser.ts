@@ -57,7 +57,7 @@ export function parseChordSequence(input: string): ParseResult<ChordSymbol>[] {
   return tokens.map(parseChord);
 }
 
-function resolveRoot(letter: string, accidental: string | null): PitchClass | null {
+export function resolveRoot(letter: string, accidental: string | null): PitchClass | null {
   const key = letter + (accidental ?? '');
   const MAP: Record<string, PitchClass> = {
     'C': 'C', 'C#': 'Cs',
