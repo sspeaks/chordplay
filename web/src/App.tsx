@@ -50,26 +50,36 @@ export default function App() {
   const playerRef = useRef<ChordPlayer | null>(null);
   const playingRef = useRef(false);
   
-  const parseResults = notationMode === 'standard'
-    ? parseChordSequence(chordText)
-    : parseRomanSequence(chordText, selectedKey);
-  const validChords: ChordSymbol[] = parseResults
-    .filter(r => r.ok)
-    .map(r => (r as { ok: true; value: ChordSymbol }).value);
+  const parseResults = useMemo(() =>
+    notationMode === 'standard'
+      ? parseChordSequence(chordText)
+      : parseRomanSequence(chordText, selectedKey),
+    [notationMode, chordText, selectedKey],
+  );
+  const validChords = useMemo<ChordSymbol[]>(() =>
+    parseResults
+      .filter(r => r.ok)
+      .map(r => (r as { ok: true; value: ChordSymbol }).value),
+    [parseResults],
+  );
   
-  // Auto-infer key when 2+ valid chords exist and key hasn't been manually set
+  // Auto-infer key when 2+ valid chords exist and key hasn't been manually set.
+  // Skip inference in Roman mode — Roman numerals are key-relative, so inferring
+  // a key from pitches that were derived from the current key is circular.
   const inferredKey = useMemo(() => {
+    if (notationMode === 'roman') return null;
     if (validChords.length >= 2) {
       return inferKey(validChords);
     }
     return null;
-  }, [validChords]);
+  }, [validChords, notationMode]);
 
   useEffect(() => {
-    if (!keyManuallySet && inferredKey) {
+    if (!keyManuallySet && inferredKey &&
+        (inferredKey.root !== selectedKey.root || inferredKey.quality !== selectedKey.quality)) {
       setSelectedKey(inferredKey);
     }
-  }, [inferredKey, keyManuallySet]);
+  }, [inferredKey, keyManuallySet, selectedKey]);
   
   const smoothMode = voiceLeading === 'smooth' ? 'equal' : voiceLeading === 'bass' ? 'bass' : null;
   const voiceLeadingOptions: VoiceLeadingOptions = { gravityCenter, targetSpread };
