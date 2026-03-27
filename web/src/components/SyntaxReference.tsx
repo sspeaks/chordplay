@@ -122,6 +122,35 @@ export default function SyntaxReference({ isOpen, onClose }: SyntaxReferenceProp
             <p><em>Omit for automatic voice leading in smooth modes</em></p>
           </div>
         </section>
+
+        <section className="spelled-section">
+          <h3>Spelled Chords</h3>
+          <p className="format-desc">
+            Enter 4 notes in parentheses to spell a chord directly.
+            The chord type is identified automatically.
+          </p>
+          <div className="format-example">
+            <span className="fmt-root">(Note Note Note Note)</span>
+          </div>
+          <div className="quality-grid">
+            <div className="quality-item">
+              <span className="quality-display">F dom7</span>
+              <code className="quality-code">(F A C Eb)</code>
+            </div>
+            <div className="quality-item">
+              <span className="quality-display">C maj7</span>
+              <code className="quality-code">(C E G B)</code>
+            </div>
+            <div className="quality-item">
+              <span className="quality-display">D min7</span>
+              <code className="quality-code">(D F A C)</code>
+            </div>
+          </div>
+          <p className="format-desc">
+            Notes are played in the order given (first = lowest pitch).
+            Accidentals: <code>#</code> for sharp, <code>b</code> for flat.
+          </p>
+        </section>
       </div>
     </div>
   );
