@@ -1,6 +1,7 @@
 import type { PitchClass, ChordType, ChordSymbol, ParseResult, KeySignature } from '../types';
-import { parseQuality } from './parser';
+import { parseQuality, tokenizeChordInput } from './parser';
 import { scaleDegreeToPC, parseRomanNumeral } from './romanNumerals';
+import { parseSpelledChord } from './chordSpelling';
 
 export function parseRomanChord(input: string, key: KeySignature): ParseResult<ChordSymbol> {
   const trimmed = input.trim();
@@ -77,6 +78,8 @@ export function parseRomanChord(input: string, key: KeySignature): ParseResult<C
 export function parseRomanSequence(input: string, key: KeySignature): ParseResult<ChordSymbol>[] {
   const trimmed = input.trim();
   if (trimmed.length === 0) return [];
-  const tokens = trimmed.split(/\s+/);
-  return tokens.map(token => parseRomanChord(token, key));
+  const tokens = tokenizeChordInput(trimmed).filter(t => !/^\s+$/.test(t));
+  return tokens.map(token =>
+    token.startsWith('(') ? parseSpelledChord(token) : parseRomanChord(token, key)
+  );
 }

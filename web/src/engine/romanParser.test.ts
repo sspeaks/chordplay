@@ -169,4 +169,17 @@ describe('parseRomanSequence', () => {
     const result = parseRomanSequence('', Cmaj);
     expect(result).toHaveLength(0);
   });
+
+  it('handles spelled chords in roman mode', () => {
+    const result = parseRomanSequence('I (F A C Eb) ii7', Cmaj);
+    expect(result).toHaveLength(3);
+    expect(result[0]!.ok).toBe(true);
+    expect(result[1]!.ok).toBe(true);
+    if (result[1]!.ok) {
+      expect(result[1]!.value.root).toBe('F');
+      expect(result[1]!.value.quality).toBe('Dom7');
+      expect(result[1]!.value.explicitVoicing).toBeDefined();
+    }
+    expect(result[2]!.ok).toBe(true);
+  });
 });
