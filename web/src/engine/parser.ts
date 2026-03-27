@@ -1,4 +1,33 @@
 import type { PitchClass, ChordType, ChordSymbol, ParseResult } from '../types';
+import { parseSpelledChord } from './chordSpelling';
+
+export function tokenizeChordInput(input: string): string[] {
+  const tokens: string[] = [];
+  let i = 0;
+  while (i < input.length) {
+    if (input[i] === '(') {
+      const end = input.indexOf(')', i);
+      if (end === -1) {
+        // Unclosed paren — take rest as single token
+        tokens.push(input.slice(i));
+        break;
+      }
+      tokens.push(input.slice(i, end + 1));
+      i = end + 1;
+    } else if (/\s/.test(input[i]!)) {
+      let j = i;
+      while (j < input.length && /\s/.test(input[j]!)) j++;
+      tokens.push(input.slice(i, j));
+      i = j;
+    } else {
+      let j = i;
+      while (j < input.length && !/[\s(]/.test(input[j]!)) j++;
+      tokens.push(input.slice(i, j));
+      i = j;
+    }
+  }
+  return tokens;
+}
 
 export function parseChord(input: string): ParseResult<ChordSymbol> {
   const trimmed = input.trim();
@@ -53,8 +82,10 @@ export function parseChord(input: string): ParseResult<ChordSymbol> {
 export function parseChordSequence(input: string): ParseResult<ChordSymbol>[] {
   const trimmed = input.trim();
   if (trimmed.length === 0) return [];
-  const tokens = trimmed.split(/\s+/);
-  return tokens.map(parseChord);
+  const tokens = tokenizeChordInput(trimmed).filter(t => !/^\s+$/.test(t));
+  return tokens.map(token =>
+    token.startsWith('(') ? parseSpelledChord(token) : parseChord(token)
+  );
 }
 
 export function resolveRoot(letter: string, accidental: string | null): PitchClass | null {

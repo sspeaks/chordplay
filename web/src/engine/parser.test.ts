@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseChord, parseChordSequence } from './parser';
+import { parseChord, parseChordSequence, tokenizeChordInput } from './parser';
 import type { ChordSymbol } from '../types';
 
 function expectChord(input: string, expected: ChordSymbol) {
@@ -147,6 +147,37 @@ describe('parseChord', () => {
   });
 });
 
+describe('tokenizeChordInput', () => {
+  it('tokenizes plain chord sequence', () => {
+    expect(tokenizeChordInput('Cmaj7 Am7')).toEqual(['Cmaj7', ' ', 'Am7']);
+  });
+
+  it('groups parenthesized notes as single tokens', () => {
+    expect(tokenizeChordInput('Cmaj7 (F A C Eb) Dm7')).toEqual([
+      'Cmaj7', ' ', '(F A C Eb)', ' ', 'Dm7'
+    ]);
+  });
+
+  it('handles adjacent spelled chords', () => {
+    expect(tokenizeChordInput('(C E G B) (F A C Eb)')).toEqual([
+      '(C E G B)', ' ', '(F A C Eb)'
+    ]);
+  });
+
+  it('handles unclosed paren as single failed token', () => {
+    const tokens = tokenizeChordInput('(C E G');
+    expect(tokens).toEqual(['(C E G']);
+  });
+
+  it('handles empty parens', () => {
+    expect(tokenizeChordInput('()')).toEqual(['()']);
+  });
+
+  it('preserves multiple spaces', () => {
+    expect(tokenizeChordInput('C   Am')).toEqual(['C', '   ', 'Am']);
+  });
+});
+
 describe('parseChordSequence', () => {
   it('parses space-separated chords', () => {
     const result = parseChordSequence('C Am7 G7');
@@ -170,5 +201,43 @@ describe('parseChordSequence', () => {
     const result = parseChordSequence('Cmaj7 Am7 Dm7 G7 Em7 A7 Dm7 G7 Cmaj7 C7 Fmaj7 Fm6 Cmaj7 Am7 Dm7 G7 Cmaj7');
     expect(result).toHaveLength(17);
     expect(result.every(r => r.ok)).toBe(true);
+  });
+});
+
+describe('parseChordSequence with spelled chords', () => {
+  it('parses mixed sequence', () => {
+    const results = parseChordSequence('Cmaj7 (F A C Eb) Dm7');
+    expect(results.length).toBe(3);
+    expect(results[0]!.ok).toBe(true);
+    if (results[0]!.ok) {
+      expect(results[0]!.value.quality).toBe('Maj7');
+      expect(results[0]!.value.explicitVoicing).toBeUndefined();
+    }
+    expect(results[1]!.ok).toBe(true);
+    if (results[1]!.ok) {
+      expect(results[1]!.value.root).toBe('F');
+      expect(results[1]!.value.quality).toBe('Dom7');
+      expect(results[1]!.value.explicitVoicing).toBeDefined();
+    }
+    expect(results[2]!.ok).toBe(true);
+    if (results[2]!.ok) {
+      expect(results[2]!.value.quality).toBe('Min7');
+    }
+  });
+
+  it('parses all-spelled sequence', () => {
+    const results = parseChordSequence('(C E G B) (F A C Eb)');
+    expect(results.length).toBe(2);
+    expect(results.every(r => r.ok)).toBe(true);
+  });
+
+  it('handles empty input', () => {
+    expect(parseChordSequence('')).toEqual([]);
+  });
+
+  it('handles unclosed paren as parse error', () => {
+    const results = parseChordSequence('(C E G');
+    expect(results.length).toBe(1);
+    expect(results[0]!.ok).toBe(false);
   });
 });
