@@ -23,6 +23,8 @@ export interface ChordSymbol {
   readonly root: PitchClass;
   readonly quality: ChordType;
   readonly inversion: number | null;  // null = auto-voice in smooth mode
+  readonly explicitVoicing?: PitchClass[];  // bypass voice leading, play these notes in order
+  readonly warning?: boolean;               // true if notes didn't match any known chord type
 }
 
 export type Tuning = 'just' | 'equal';
