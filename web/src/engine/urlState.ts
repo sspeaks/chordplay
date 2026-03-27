@@ -14,7 +14,7 @@ export interface AppState {
 }
 
 export const DEFAULTS: AppState = {
-  chordText: 'Cmaj7 Am7 Dm7 G7 Em7 A7 Dm7 G7 Cmaj7 C7 Fmaj7 Fm6 Cmaj7 Am7 Dm7 G7 Cmaj7',
+  chordText: '',
   tuning: 'equal',
   voiceLeading: 'smooth',
   playStyle: 'block',
