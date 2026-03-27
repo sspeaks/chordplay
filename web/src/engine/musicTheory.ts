@@ -186,3 +186,17 @@ export function midiToNoteName(midi: number): string {
   const octave = Math.floor(midi / 12) - 1;
   return `${MIDI_NOTE_NAMES[pc]}${octave}`;
 }
+
+export function resolveRoot(letter: string, accidental: string | null): PitchClass | null {
+  const key = letter + (accidental ?? '');
+  const MAP: Record<string, PitchClass> = {
+    'C': 'C', 'C#': 'Cs',
+    'D': 'D', 'Db': 'Cs', 'D#': 'Ds',
+    'E': 'E', 'Eb': 'Ds',
+    'F': 'F',
+    'G': 'G', 'F#': 'Fs', 'Gb': 'Fs', 'G#': 'Gs',
+    'A': 'A', 'Ab': 'Gs', 'A#': 'As',
+    'B': 'B', 'Bb': 'As',
+  };
+  return MAP[key] ?? null;
+}

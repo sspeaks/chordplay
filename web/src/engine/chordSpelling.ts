@@ -1,6 +1,5 @@
 import { CHORD_TYPES, type PitchClass, type ChordType, type ChordSymbol, type ParseResult } from '../types';
-import { resolveRoot } from './parser';
-import { pitchClassToInt, pitchClassFromInt, chordIntervals } from './musicTheory';
+import { pitchClassToInt, pitchClassFromInt, chordIntervals, resolveRoot } from './musicTheory';
 
 export function parseNoteName(input: string): PitchClass | null {
   if (input.length === 0 || input.length > 2) return null;
@@ -28,6 +27,12 @@ function normalizeIntervals(ct: ChordType): number[] {
   return [...mods].sort((a, b) => a - b);
 }
 
+// Precompute normalized interval patterns for all lookup types
+const LOOKUP_PATTERNS = LOOKUP_TYPES.map(ct => ({
+  type: ct,
+  intervals: normalizeIntervals(ct),
+}));
+
 interface ChordMatch {
   root: PitchClass;
   quality: ChordType;
@@ -48,8 +53,7 @@ export function identifyChord(pcs: PitchClass[]): ChordMatch | null {
       .map(pc => ((pitchClassToInt(pc) - rootInt) % 12 + 12) % 12)
       .sort((a, b) => a - b);
 
-    for (const ct of LOOKUP_TYPES) {
-      const pattern = normalizeIntervals(ct);
+    for (const { type: ct, intervals: pattern } of LOOKUP_PATTERNS) {
       if (intervals.length !== pattern.length) continue;
       if (intervals.every((v, i) => v === pattern[i])) {
         const firstPC = pcs[0]!;

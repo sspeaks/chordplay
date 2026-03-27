@@ -1,5 +1,6 @@
-import type { PitchClass, ChordType, ChordSymbol, ParseResult } from '../types';
+import type { ChordType, ChordSymbol, ParseResult } from '../types';
 import { parseSpelledChord } from './chordSpelling';
+import { resolveRoot } from './musicTheory';
 
 export function tokenizeChordInput(input: string): string[] {
   const tokens: string[] = [];
@@ -86,20 +87,6 @@ export function parseChordSequence(input: string): ParseResult<ChordSymbol>[] {
   return tokens.map(token =>
     token.startsWith('(') ? parseSpelledChord(token) : parseChord(token)
   );
-}
-
-export function resolveRoot(letter: string, accidental: string | null): PitchClass | null {
-  const key = letter + (accidental ?? '');
-  const MAP: Record<string, PitchClass> = {
-    'C': 'C', 'C#': 'Cs',
-    'D': 'D', 'Db': 'Cs', 'D#': 'Ds',
-    'E': 'E', 'Eb': 'Ds',
-    'F': 'F',
-    'G': 'G', 'F#': 'Fs', 'Gb': 'Fs', 'G#': 'Gs',
-    'A': 'A', 'Ab': 'Gs', 'A#': 'As',
-    'B': 'B', 'Bb': 'As',
-  };
-  return MAP[key] ?? null;
 }
 
 // Quality parser — order matters! Try longest/most specific first.
