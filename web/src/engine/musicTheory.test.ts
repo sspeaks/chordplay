@@ -117,6 +117,10 @@ describe('chordIntervals', () => {
   it('Min9no7 = [0,3,7,14]', () => {
     expect(chordIntervals('Min9no7')).toEqual([0, 3, 7, 14]);
   });
+
+  it('Dom13 = [0,4,9,10]', () => {
+    expect(chordIntervals('Dom13')).toEqual([0, 4, 9, 10]);
+  });
 });
 
 describe('voiceChord', () => {
@@ -146,6 +150,12 @@ describe('chordPitchClasses', () => {
   });
   it('D Dom7 = [D, Fs, A, C]', () => {
     expect(chordPitchClasses('D', 'Dom7')).toEqual(['D', 'Fs', 'A', 'C']);
+  });
+  it('C Dom13 = [C, E, A, As]', () => {
+    expect(chordPitchClasses('C', 'Dom13')).toEqual(['C', 'E', 'A', 'As']);
+  });
+  it('As Dom13 = [As, D, G, Gs]', () => {
+    expect(chordPitchClasses('As', 'Dom13')).toEqual(['As', 'D', 'G', 'Gs']);
   });
 });
 

@@ -54,6 +54,8 @@ const INTERVALS: Record<ChordType, readonly number[]> = {
   Min9no3:  [0, 7, 10, 14],
   Min9no5:  [0, 3, 10, 14],
   Min9no7:  [0, 3, 7, 14],
+  // Dominant 13th: dom7 with 5th replaced by 6th/13th (barbershop "Waesche 13")
+  Dom13:    [0, 4, 9, 10],
 };
 
 export function chordIntervals(ct: ChordType): readonly number[] {
