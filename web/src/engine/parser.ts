@@ -123,6 +123,7 @@ export function parseQuality(s: string): ChordType | null {
     ['9-3', 'Dom9no3'],
     ['9-5', 'Dom9no5'],
     ['9-7', 'Dom9no7'],
+    ['13', 'Dom13'],
     ['7', 'Dom7'],
     ['6', 'Maj6'],
   ];

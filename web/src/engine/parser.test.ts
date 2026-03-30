@@ -116,6 +116,17 @@ describe('parseChord', () => {
     expectChord('Cmadd9', { root: 'C', quality: 'Min9no7', inversion: null });
   });
 
+  // 13th chords
+  it('C13 → C Dom13', () => {
+    expectChord('C13', { root: 'C', quality: 'Dom13', inversion: null });
+  });
+  it('Bb13 → Bb Dom13', () => {
+    expectChord('Bb13', { root: 'As', quality: 'Dom13', inversion: null });
+  });
+  it('1C13 → C Dom13, inversion 1', () => {
+    expectChord('1C13', { root: 'C', quality: 'Dom13', inversion: 1 });
+  });
+
   // 9th with accidentals and inversions
   it('Bb9-5 → Bb Dom9no5', () => {
     expectChord('Bb9-5', { root: 'As', quality: 'Dom9no5', inversion: null });
