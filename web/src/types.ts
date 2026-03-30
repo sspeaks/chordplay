@@ -24,6 +24,7 @@ export interface ChordSymbol {
   readonly root: PitchClass;
   readonly quality: ChordType;
   readonly inversion: number | null;  // null = auto-voice in smooth mode
+  readonly bass?: PitchClass;                // slash chord bass note (e.g., C/E → bass: 'E')
   readonly explicitVoicing?: PitchClass[];  // bypass voice leading, play these notes in order
   readonly warning?: boolean;               // true if notes didn't match any known chord type
 }
