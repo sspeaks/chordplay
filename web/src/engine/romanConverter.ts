@@ -104,12 +104,16 @@ export function chordTextToRoman(text: string, key: KeySignature): string {
 
     const invPrefix = chord.inversion !== null ? String(chord.inversion) : '';
 
+    const bassStr = chord.bass !== undefined
+      ? '/' + pcToStandardName(chord.bass, isSharpKey(key))
+      : '';
+
     if (secDom) {
       const secQual = chord.quality === 'Dom7' ? '7' : '';
       return `${invPrefix}V${secQual}/${secDom}`;
     }
 
-    return `${invPrefix}${accStr}${numeral}${qualSuffix}`;
+    return `${invPrefix}${accStr}${numeral}${qualSuffix}${bassStr}`;
   }).join('');
 }
 
@@ -132,6 +136,10 @@ export function romanTextToStandard(text: string, key: KeySignature): string {
     const qualSuffix = standardQualitySuffix(chord.quality);
     const invPrefix = chord.inversion !== null ? String(chord.inversion) : '';
 
-    return `${invPrefix}${rootName}${qualSuffix}`;
+    const bassStr = chord.bass !== undefined
+      ? '/' + pcToStandardName(chord.bass, useSharps)
+      : '';
+
+    return `${invPrefix}${rootName}${qualSuffix}${bassStr}`;
   }).join('');
 }

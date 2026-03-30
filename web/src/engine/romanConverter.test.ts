@@ -111,3 +111,34 @@ describe('spelled chords pass through notation conversion', () => {
     expect(roundtrippedChords).toEqual(originalChords);
   });
 });
+
+describe('slash chord conversion', () => {
+  const key: KeySignature = { root: 'C', quality: 'major' };
+
+  it('C/E → I/E (standard to roman)', () => {
+    expect(chordTextToRoman('C/E', key)).toBe('I/E');
+  });
+
+  it('Am7/G → vim7/G (standard to roman)', () => {
+    expect(chordTextToRoman('Am7/G', key)).toBe('vim7/G');
+  });
+
+  it('I/E → C/E (roman to standard)', () => {
+    expect(romanTextToStandard('I/E', key)).toBe('C/E');
+  });
+
+  it('vim7/G → Am7/G (roman to standard)', () => {
+    expect(romanTextToStandard('vim7/G', key)).toBe('Am7/G');
+  });
+
+  it('round-trip: G7/B ↔ V7/B', () => {
+    const roman = chordTextToRoman('G7/B', key);
+    expect(roman).toBe('V7/B');
+    expect(romanTextToStandard(roman, key)).toBe('G7/B');
+  });
+
+  it('V7/V stays secondary dominant (not slash)', () => {
+    const standard = romanTextToStandard('V7/V', key);
+    expect(standard).toBe('D7');
+  });
+});
