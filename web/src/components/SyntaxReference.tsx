@@ -35,6 +35,7 @@ const QUALITIES = [
   { display: 'Min-Maj 7', code: 'mM7' },
   { display: 'Sus 4', code: 'sus4' },
   { display: 'Sus 2', code: 'sus2' },
+  { display: 'Dom 13', code: '13' },
 ];
 
 export default function SyntaxReference({ isOpen, onClose }: SyntaxReferenceProps) {
@@ -120,6 +121,32 @@ export default function SyntaxReference({ isOpen, onClose }: SyntaxReferenceProp
             <p><strong>2</strong> = 2nd inversion (↑ 5th to bass)</p>
             <p><strong>3</strong> = 3rd inversion (↑ 7th to bass, if present)</p>
             <p><em>Omit for automatic voice leading in smooth modes</em></p>
+          </div>
+        </section>
+
+        <section className="slash-section">
+          <h3>Slash (Over) Chords</h3>
+          <p className="format-desc">
+            Add <code>/note</code> after any chord to specify the bass note.
+            The bass is pinned to the lowest voice.
+          </p>
+          <div className="format-example">
+            <span className="fmt-root">chord</span>
+            <span className="fmt-quality">/bass</span>
+          </div>
+          <div className="quality-grid">
+            <div className="quality-item">
+              <span className="quality-display">C over E</span>
+              <code className="quality-code">C/E</code>
+            </div>
+            <div className="quality-item">
+              <span className="quality-display">Am7 over G</span>
+              <code className="quality-code">Am7/G</code>
+            </div>
+            <div className="quality-item">
+              <span className="quality-display">C over B♭</span>
+              <code className="quality-code">C/Bb</code>
+            </div>
           </div>
         </section>
 
