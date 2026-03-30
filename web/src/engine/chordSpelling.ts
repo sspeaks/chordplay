@@ -152,5 +152,6 @@ export function chordDisplayName(chord: ChordSymbol): string {
   if (chord.warning) return '?';
   const root = PC_DISPLAY[chord.root] ?? chord.root;
   const quality = QUALITY_DISPLAY[chord.quality] ?? '';
-  return `${root}${quality}`;
+  const bass = chord.bass !== undefined ? `/${PC_DISPLAY[chord.bass] ?? chord.bass}` : '';
+  return `${root}${quality}${bass}`;
 }
