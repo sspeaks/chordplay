@@ -70,47 +70,33 @@ export function parseChord(input: string): ParseResult<ChordSymbol> {
     return { ok: false, error: `Invalid note: ${letter}${accidental ?? ''}` };
   }
 
-  // Parse quality from remaining string (up to slash or end)
-  let qualityStr = trimmed.slice(pos);
-  let bass: PitchClass | null = null;
+  // Check for slash bass: /[A-G][#b]? at end of remaining string
+  const rest = trimmed.slice(pos);
+  let qualityStr = rest;
+  let bass: PitchClass | undefined;
 
-  // Check for slash chord
-  const slashIndex = qualityStr.indexOf('/');
-  if (slashIndex !== -1) {
-    const bassPart = qualityStr.slice(slashIndex + 1).trim();
-    qualityStr = qualityStr.slice(0, slashIndex);
-    
-    // Parse bass note
-    if (bassPart.length === 0) {
-      return { ok: false, error: 'Slash chord missing bass note' };
+  const slashMatch = rest.match(/\/([A-G][#b]?)$/);
+  if (slashMatch) {
+    qualityStr = rest.slice(0, slashMatch.index);
+    const bassLetter = slashMatch[1]![0]!;
+    const bassAccidental = slashMatch[1]!.length > 1 ? slashMatch[1]![1]! : null;
+    const bassPC = resolveRoot(bassLetter, bassAccidental);
+    if (bassPC === null) {
+      return { ok: false, error: `Invalid bass note: ${slashMatch[1]}` };
     }
-    
-    const bassLetter = bassPart[0]!;
-    if (!/[A-G]/.test(bassLetter)) {
-      return { ok: false, error: `Invalid bass note: ${bassPart}` };
-    }
-    
-    let bassAccidental: string | null = null;
-    if (bassPart.length > 1 && (bassPart[1] === '#' || bassPart[1] === 'b')) {
-      bassAccidental = bassPart[1];
-    }
-    
-    const resolvedBass = resolveRoot(bassLetter, bassAccidental);
-    if (resolvedBass === null) {
-      return { ok: false, error: `Invalid bass note: ${bassPart}` };
-    }
-    bass = resolvedBass;
-    
-    // Slash chord overrides inversion
-    inversion = null;
+    bass = bassPC;
   }
 
+  // Parse quality from remaining string (without slash suffix)
   const quality = parseQuality(qualityStr);
   if (quality === null) {
     return { ok: false, error: `Unknown quality: '${qualityStr}'` };
   }
 
-  return { ok: true, value: { root, quality, inversion, ...(bass && { bass }) } };
+  // Slash overrides inversion
+  const finalInversion = bass !== undefined ? null : inversion;
+
+  return { ok: true, value: { root, quality, inversion: finalInversion, ...(bass !== undefined && { bass }) } };
 }
 
 export function parseChordSequence(input: string): ParseResult<ChordSymbol>[] {
