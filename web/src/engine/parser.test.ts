@@ -156,6 +156,32 @@ describe('parseChord', () => {
   it('invalid root fails', () => {
     expectFail('X7');
   });
+
+  // Slash chords
+  it('C/E → C Major, bass=E', () => {
+    expectChord('C/E', { root: 'C', quality: 'Major', inversion: null, bass: 'E' });
+  });
+  it('Eb/C → Eb Major, bass=C', () => {
+    expectChord('Eb/C', { root: 'Ds', quality: 'Major', inversion: null, bass: 'C' });
+  });
+  it('Am7/G → A Min7, bass=G', () => {
+    expectChord('Am7/G', { root: 'A', quality: 'Min7', inversion: null, bass: 'G' });
+  });
+  it('C/Bb → C Major, bass=Bb', () => {
+    expectChord('C/Bb', { root: 'C', quality: 'Major', inversion: null, bass: 'As' });
+  });
+  it('C7/Bb → C Dom7, bass=Bb', () => {
+    expectChord('C7/Bb', { root: 'C', quality: 'Dom7', inversion: null, bass: 'As' });
+  });
+  it('C13/Bb → C Dom13, bass=Bb', () => {
+    expectChord('C13/Bb', { root: 'C', quality: 'Dom13', inversion: null, bass: 'As' });
+  });
+  it('1C/E → slash overrides inversion, bass=E', () => {
+    expectChord('1C/E', { root: 'C', quality: 'Major', inversion: null, bass: 'E' });
+  });
+  it('F#m7/E → F# Min7, bass=E', () => {
+    expectChord('F#m7/E', { root: 'Fs', quality: 'Min7', inversion: null, bass: 'E' });
+  });
 });
 
 describe('tokenizeChordInput', () => {
