@@ -284,3 +284,50 @@ describe('voiceChordSequence with explicitVoicing', () => {
     }
   });
 });
+
+describe('voiceChordSequence with slash chords', () => {
+  it('slash chord bass is lowest voice (no voice leading)', () => {
+    const chords: ChordSymbol[] = [
+      { root: 'C', quality: 'Major', inversion: null, bass: 'E' },
+    ];
+    const result = voiceChordSequence(null, chords);
+    expect(result).toHaveLength(1);
+    const midis = result[0]!.map(pitchToMidi);
+    expect(midis[0]).toBe(Math.min(...midis));
+    expect(result[0]![0]!.pitchClass).toBe('E');
+  });
+
+  it('slash chord bass stays lowest with smooth voice leading', () => {
+    const chords: ChordSymbol[] = [
+      { root: 'C', quality: 'Major', inversion: 0 },
+      { root: 'C', quality: 'Major', inversion: null, bass: 'E' },
+    ];
+    const result = voiceChordSequence('equal', chords);
+    expect(result).toHaveLength(2);
+    const slashMidis = result[1]!.map(pitchToMidi);
+    expect(slashMidis[0]).toBe(Math.min(...slashMidis));
+    expect(result[1]![0]!.pitchClass).toBe('E');
+  });
+
+  it('non-chord-tone bass produces 4 voices', () => {
+    const chords: ChordSymbol[] = [
+      { root: 'C', quality: 'Major', inversion: null, bass: 'As' },
+    ];
+    const result = voiceChordSequence(null, chords);
+    expect(result).toHaveLength(1);
+    expect(result[0]).toHaveLength(4);
+    expect(result[0]![0]!.pitchClass).toBe('As');
+  });
+
+  it('first chord with slash bass uses bass voicing in smooth mode', () => {
+    const chords: ChordSymbol[] = [
+      { root: 'C', quality: 'Major', inversion: null, bass: 'E' },
+      { root: 'G', quality: 'Dom7', inversion: null },
+    ];
+    const result = voiceChordSequence('equal', chords);
+    expect(result).toHaveLength(2);
+    const firstMidis = result[0]!.map(pitchToMidi);
+    expect(firstMidis[0]).toBe(Math.min(...firstMidis));
+    expect(result[0]![0]!.pitchClass).toBe('E');
+  });
+});

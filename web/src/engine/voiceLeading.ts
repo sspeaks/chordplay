@@ -1,5 +1,5 @@
 import type { Pitch, PitchClass, ChordSymbol, SmoothMode, VoiceLeadingOptions } from '../types';
-import { pitchToMidi, midiToPitch, nearestPitch, voiceChord, chordPitchClasses, pitchClassToInt} from './musicTheory';
+import { pitchToMidi, midiToPitch, nearestPitch, voiceChord, chordPitchClasses, pitchClassToInt, slashChordPitchClasses } from './musicTheory';
 
 export const GRAVITY_WEIGHT = 1.0;
 export const SPREAD_WEIGHT = 2;
@@ -141,6 +141,50 @@ export function assignOctaves(pcs: PitchClass[], gravityCenter: number): Pitch[]
   return bestPitches;
 }
 
+function voiceSlashChord(
+  chord: ChordSymbol,
+  prevPitches: Pitch[] | null,
+  mode: SmoothMode | null,
+  options?: VoiceLeadingOptions,
+): Pitch[] {
+  const { gravityCenter = DEFAULT_GRAVITY_CENTER } = options ?? {};
+  const pcs = slashChordPitchClasses(chord.root, chord.quality, chord.bass!);
+  const bassPc = pcs[0]!;
+  const upperPCs = pcs.slice(1);
+
+  if (!prevPitches || mode === null) {
+    // No previous chord or no voice leading: assign octaves ascending from bass
+    const bassPitch = nearestPitch(bassPc, gravityCenter - 12);
+    const bassMidi = pitchToMidi(bassPitch);
+    const upper = upperPCs.map((pc, i) => {
+      const target = bassMidi + 4 + i * 4;
+      const p = nearestPitch(pc, target);
+      let midi = pitchToMidi(p);
+      if (midi <= bassMidi) midi += 12;
+      return midiToPitch(midi);
+    });
+    return [bassPitch, ...upper];
+  }
+
+  // With voice leading: pin bass, smooth upper 3
+  const prevSorted = [...prevPitches].sort((a, b) => pitchToMidi(a) - pitchToMidi(b));
+  const prevBassMidi = pitchToMidi(prevSorted[0]!);
+  const bassPitch = nearestPitch(bassPc, prevBassMidi);
+  const bassMidi = pitchToMidi(bassPitch);
+
+  const prevUpper = prevSorted.slice(1);
+  const smoothed = smoothVoice(mode, prevUpper, upperPCs, options);
+
+  // Ensure all upper voices are above bass
+  const result = smoothed.map(p => {
+    let midi = pitchToMidi(p);
+    if (midi <= bassMidi) midi += 12;
+    return midiToPitch(midi);
+  });
+
+  return [bassPitch, ...result];
+}
+
 export function voiceChordSequence(
   mode: SmoothMode | null,
   chords: ChordSymbol[],
@@ -155,13 +199,17 @@ export function voiceChordSequence(
 
   if (mode === null) {
     return chords.map(c =>
-      c.explicitVoicing ? voiceExplicit(c) : voiceChord(c.root, c.quality, c.inversion ?? 0)
+      c.explicitVoicing ? voiceExplicit(c)
+      : c.bass ? voiceSlashChord(c, null, null, options)
+      : voiceChord(c.root, c.quality, c.inversion ?? 0)
     );
   }
 
   const first = chords[0]!;
   let firstVoicing: Pitch[];
-  if (first.explicitVoicing) {
+  if (first.bass) {
+    firstVoicing = voiceSlashChord(first, null, null, options);
+  } else if (first.explicitVoicing) {
     firstVoicing = voiceExplicit(first);
   } else {
     const baseVoicing = voiceChord(first.root, first.quality, first.inversion ?? 0);
@@ -181,6 +229,8 @@ export function voiceChordSequence(
     let voicing: Pitch[];
     if (chord.explicitVoicing) {
       voicing = voiceExplicit(chord);
+    } else if (chord.bass) {
+      voicing = voiceSlashChord(chord, prev, mode, options);
     } else if (chord.inversion !== null) {
       voicing = voiceChord(chord.root, chord.quality, chord.inversion);
     } else {
