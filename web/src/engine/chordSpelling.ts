@@ -16,7 +16,7 @@ const LOOKUP_TYPES = CHORD_TYPES.filter(
 );
 
 const PRIORITY: ChordType[] = [
-  'Maj7', 'Dom7', 'Min7', 'Maj6', 'Min6',
+  'Maj7', 'Dom7', 'Dom13', 'Min7', 'Maj6', 'Min6',
   'Dim7', 'HalfDim7', 'MinMaj7',
   'Major', 'Minor', 'Dim', 'Aug', 'Sus4', 'Sus2',
 ];
@@ -137,6 +137,7 @@ const QUALITY_DISPLAY: Record<ChordType, string> = {
   Major: '', Minor: 'm', Dom7: '7', Maj7: 'maj7', Min7: 'm7',
   Dim: 'dim', Dim7: 'dim7', Aug: 'aug', HalfDim7: 'm7b5',
   Sus4: 'sus4', Sus2: 'sus2', MinMaj7: 'mMaj7', Maj6: '6', Min6: 'm6',
+  Dom13: '13',
   Dom9no1: '9-1', Dom9no3: '9-3', Dom9no5: '9-5', Dom9no7: '9-7',
   Maj9no1: 'maj9-1', Maj9no3: 'maj9-3', Maj9no5: 'maj9-5', Maj9no7: 'maj9-7',
   Min9no1: 'm9-1', Min9no3: 'm9-3', Min9no5: 'm9-5', Min9no7: 'm9-7',

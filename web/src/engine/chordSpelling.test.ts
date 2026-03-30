@@ -59,6 +59,15 @@ describe('identifyChord', () => {
     expect(id(['C', 'Eb', 'G', 'A'])).toEqual({ root: 'C', quality: 'Min6', inversion: 0 });
   });
 
+  it('identifies C Dom13 from [C, E, A, Bb]', () => {
+    const result = identifyChord(['C', 'E', 'A', 'As']);
+    expect(result).toEqual({ root: 'C', quality: 'Dom13', inversion: 0 });
+  });
+  it('identifies Bb Dom13 from [Bb, D, G, Ab]', () => {
+    const result = identifyChord(['As', 'D', 'G', 'Gs']);
+    expect(result).toEqual({ root: 'As', quality: 'Dom13', inversion: 0 });
+  });
+
   it('identifies triads with doubled note', () => {
     expect(id(['C', 'E', 'G', 'C'])).toEqual({ root: 'C', quality: 'Major', inversion: 0 });
     expect(id(['A', 'C', 'E', 'A'])).toEqual({ root: 'A', quality: 'Minor', inversion: 0 });
