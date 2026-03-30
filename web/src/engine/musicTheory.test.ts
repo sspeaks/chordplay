@@ -119,8 +119,8 @@ describe('chordIntervals', () => {
     expect(chordIntervals('Min9no7')).toEqual([0, 3, 7, 14]);
   });
 
-  it('Dom13 = [0,4,9,10]', () => {
-    expect(chordIntervals('Dom13')).toEqual([0, 4, 9, 10]);
+  it('Dom13 = [0,10,16,21] (Waesche: 1-b7-3-13)', () => {
+    expect(chordIntervals('Dom13')).toEqual([0, 10, 16, 21]);
   });
 });
 
@@ -152,11 +152,11 @@ describe('chordPitchClasses', () => {
   it('D Dom7 = [D, Fs, A, C]', () => {
     expect(chordPitchClasses('D', 'Dom7')).toEqual(['D', 'Fs', 'A', 'C']);
   });
-  it('C Dom13 = [C, E, A, As]', () => {
-    expect(chordPitchClasses('C', 'Dom13')).toEqual(['C', 'E', 'A', 'As']);
+  it('C Dom13 = [C, As, E, A] (Waesche: 1-b7-3-13)', () => {
+    expect(chordPitchClasses('C', 'Dom13')).toEqual(['C', 'As', 'E', 'A']);
   });
-  it('As Dom13 = [As, D, G, Gs]', () => {
-    expect(chordPitchClasses('As', 'Dom13')).toEqual(['As', 'D', 'G', 'Gs']);
+  it('As Dom13 = [As, Gs, D, G] (Waesche: 1-b7-3-13)', () => {
+    expect(chordPitchClasses('As', 'Dom13')).toEqual(['As', 'Gs', 'D', 'G']);
   });
 });
 
@@ -330,9 +330,9 @@ describe('slashChordPitchClasses', () => {
   });
 
   it('non-chord-tone bass on chord without P5 (Dom13) → drops last PC', () => {
-    // Dom13 = [0,4,9,10] = C,E,A,Bb — no G (P5) to omit
+    // Dom13 = [0,10,16,21] unique PCs = C,As,E,A — no G (P5) to omit
     // With bass F: need to drop one of the 4 chord tones
-    // Fallback drops last → [F, C, E, A]
+    // Fallback drops last → [F, C, As, E]
     const result = slashChordPitchClasses('C', 'Dom13', 'F');
     expect(result).toHaveLength(4);
     expect(result[0]).toBe('F');
