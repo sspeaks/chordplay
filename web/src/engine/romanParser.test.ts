@@ -189,3 +189,67 @@ describe('parseRomanSequence', () => {
     expect(result[2]!.ok).toBe(true);
   });
 });
+
+describe('parseRomanChord slash chords', () => {
+  const key: KeySignature = { root: 'C', quality: 'major' };
+
+  it('I/E → C Major with bass E', () => {
+    const result = parseRomanChord('I/E', key);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.root).toBe('C');
+      expect(result.value.quality).toBe('Major');
+      expect(result.value.bass).toBe('E');
+    }
+  });
+
+  it('V7/B → G Dom7 with bass B (not secondary dominant)', () => {
+    const result = parseRomanChord('V7/B', key);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.root).toBe('G');
+      expect(result.value.quality).toBe('Dom7');
+      expect(result.value.bass).toBe('B');
+    }
+  });
+
+  it('V7/V → secondary dominant (D Dom7, no bass)', () => {
+    const result = parseRomanChord('V7/V', key);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.root).toBe('D');
+      expect(result.value.quality).toBe('Dom7');
+      expect(result.value.bass).toBeUndefined();
+    }
+  });
+
+  it('V7/Bb → G Dom7 with bass Bb', () => {
+    const result = parseRomanChord('V7/Bb', key);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.root).toBe('G');
+      expect(result.value.quality).toBe('Dom7');
+      expect(result.value.bass).toBe('As');
+    }
+  });
+
+  it('V7/bIII → secondary dominant (not slash)', () => {
+    const result = parseRomanChord('V7/bIII', key);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.root).toBe('As');
+      expect(result.value.quality).toBe('Dom7');
+      expect(result.value.bass).toBeUndefined();
+    }
+  });
+
+  it('IV/C → F Major with bass C', () => {
+    const result = parseRomanChord('IV/C', key);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.root).toBe('F');
+      expect(result.value.quality).toBe('Major');
+      expect(result.value.bass).toBe('C');
+    }
+  });
+});

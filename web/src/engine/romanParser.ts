@@ -2,6 +2,7 @@ import type { PitchClass, ChordType, ChordSymbol, ParseResult, KeySignature } fr
 import { parseQuality, tokenizeChordInput } from './parser';
 import { scaleDegreeToPC, parseRomanNumeral } from './romanNumerals';
 import { parseSpelledChord } from './chordSpelling';
+import { resolveRoot } from './musicTheory';
 
 export function parseRomanChord(input: string, key: KeySignature): ParseResult<ChordSymbol> {
   const trimmed = input.trim();
@@ -40,10 +41,25 @@ export function parseRomanChord(input: string, key: KeySignature): ParseResult<C
   const slashIdx = rest.indexOf('/');
   let qualityStr: string;
   let secondaryTarget: string | null = null;
+  let slashBass: PitchClass | undefined;
 
   if (slashIdx !== -1) {
     qualityStr = rest.slice(0, slashIdx);
-    secondaryTarget = rest.slice(slashIdx + 1);
+    const afterSlash = rest.slice(slashIdx + 1);
+
+    // Check if it's a letter name (slash chord bass) vs Roman numeral (secondary dominant)
+    const bassMatch = afterSlash.match(/^([A-G][#b]?)$/);
+    if (bassMatch) {
+      const bassLetter = bassMatch[1]![0]!;
+      const bassAcc = bassMatch[1]!.length > 1 ? bassMatch[1]![1]! : null;
+      const bassPC = resolveRoot(bassLetter, bassAcc);
+      if (bassPC === null) {
+        return { ok: false, error: `Invalid bass note: '${afterSlash}'` };
+      }
+      slashBass = bassPC;
+    } else {
+      secondaryTarget = afterSlash;
+    }
   } else {
     qualityStr = rest;
   }
@@ -81,7 +97,7 @@ export function parseRomanChord(input: string, key: KeySignature): ParseResult<C
     root = scaleDegreeToPC(key, degree, accidental);
   }
 
-  return { ok: true, value: { root, quality, inversion } };
+  return { ok: true, value: { root, quality, inversion, ...(slashBass !== undefined && { bass: slashBass }) } };
 }
 
 export function parseRomanSequence(input: string, key: KeySignature): ParseResult<ChordSymbol>[] {
