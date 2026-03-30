@@ -67,6 +67,47 @@ export function chordPitchClasses(root: PitchClass, ct: ChordType): PitchClass[]
   return chordIntervals(ct).map(i => pitchClassFromInt(rootInt + i));
 }
 
+export function slashChordPitchClasses(
+  root: PitchClass,
+  quality: ChordType,
+  bass: PitchClass,
+): PitchClass[] {
+  const intervals = chordIntervals(quality);
+  const rootInt = pitchClassToInt(root);
+
+  // Get unique pitch classes (deduplicate octave doublings like Major's [0,4,7,12])
+  const allPCs = intervals.map(i => pitchClassFromInt(rootInt + i));
+  const seen = new Set<PitchClass>();
+  const uniquePCs: PitchClass[] = [];
+  for (const pc of allPCs) {
+    if (!seen.has(pc)) {
+      seen.add(pc);
+      uniquePCs.push(pc);
+    }
+  }
+
+  if (seen.has(bass)) {
+    // Bass is a chord tone — remove it from upper voices
+    const upper = uniquePCs.filter(pc => pc !== bass);
+    // If fewer than 3 upper voices, double the root
+    while (upper.length < 3) upper.push(root);
+    return [bass, ...upper];
+  }
+
+  // Bass is NOT a chord tone
+  if (uniquePCs.length <= 3) {
+    // Triad: full triad sits above the bass
+    return [bass, ...uniquePCs];
+  }
+
+  // 4+ unique PCs: omit the 5th (interval 7 semitones above root)
+  const fifthPC = pitchClassFromInt(rootInt + 7);
+  const upper = uniquePCs.filter(pc => pc !== fifthPC);
+  // If removing the 5th didn't help (chord has no P5), drop last
+  while (upper.length > 3) upper.pop();
+  return [bass, ...upper];
+}
+
 export function voiceChord(root: PitchClass, ct: ChordType, inv: number): Pitch[] {
   const baseMidi = pitchToMidi({ pitchClass: root, octave: 3 });
   const intervals = chordIntervals(ct);

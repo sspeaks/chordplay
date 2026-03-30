@@ -7,6 +7,7 @@ import {
   chordIntervals,
   voiceChord,
   chordPitchClasses,
+  slashChordPitchClasses,
   nearestPitch,
   justFrequencies,
   equalFrequencies,
@@ -299,5 +300,32 @@ describe('displayPitchName', () => {
   it('natural notes are unaffected by root', () => {
     expect(displayPitchName('C', 'Fs')).toBe('C');
     expect(displayPitchName('G', 'Ds')).toBe('G');
+  });
+});
+
+describe('slashChordPitchClasses', () => {
+  it('bass is chord tone (C/E) → removes bass from upper, doubles root', () => {
+    const result = slashChordPitchClasses('C', 'Major', 'E');
+    expect(result).toEqual(['E', 'C', 'G', 'C']);
+  });
+
+  it('bass is NOT chord tone, triad (C/Bb) → full triad over bass', () => {
+    const result = slashChordPitchClasses('C', 'Major', 'As');
+    expect(result).toEqual(['As', 'C', 'E', 'G']);
+  });
+
+  it('bass is NOT chord tone, 4-note chord (C7/A) → omit 5th', () => {
+    const result = slashChordPitchClasses('C', 'Dom7', 'A');
+    expect(result).toEqual(['A', 'C', 'E', 'As']);
+  });
+
+  it('bass is chord tone of 4-note chord (C7/E) → remove from upper', () => {
+    const result = slashChordPitchClasses('C', 'Dom7', 'E');
+    expect(result).toEqual(['E', 'C', 'G', 'As']);
+  });
+
+  it('bass is root (C/C) → root in bass, remaining tones upper', () => {
+    const result = slashChordPitchClasses('C', 'Major', 'C');
+    expect(result).toEqual(['C', 'E', 'G', 'C']);
   });
 });
