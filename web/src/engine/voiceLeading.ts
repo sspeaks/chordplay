@@ -200,14 +200,14 @@ export function voiceChordSequence(
   if (mode === null) {
     return chords.map(c =>
       c.explicitVoicing ? voiceExplicit(c)
-      : c.bass ? voiceSlashChord(c, null, null, options)
+      : c.bass !== undefined ? voiceSlashChord(c, null, null, options)
       : voiceChord(c.root, c.quality, c.inversion ?? 0)
     );
   }
 
   const first = chords[0]!;
   let firstVoicing: Pitch[];
-  if (first.bass) {
+  if (first.bass !== undefined) {
     firstVoicing = voiceSlashChord(first, null, null, options);
   } else if (first.explicitVoicing) {
     firstVoicing = voiceExplicit(first);
@@ -229,7 +229,7 @@ export function voiceChordSequence(
     let voicing: Pitch[];
     if (chord.explicitVoicing) {
       voicing = voiceExplicit(chord);
-    } else if (chord.bass) {
+    } else if (chord.bass !== undefined) {
       voicing = voiceSlashChord(chord, prev, mode, options);
     } else if (chord.inversion !== null) {
       voicing = voiceChord(chord.root, chord.quality, chord.inversion);

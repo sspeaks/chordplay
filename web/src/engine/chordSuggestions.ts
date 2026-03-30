@@ -46,7 +46,7 @@ function isDiatonic(pc: PitchClass, key: KeySignature): boolean {
 }
 
 export function chordSymbolToText(chord: ChordSymbol): string {
-  const bass = chord.bass ? '/' + ROOT_DISPLAY[chord.bass] : '';
+  const bass = chord.bass !== undefined ? '/' + ROOT_DISPLAY[chord.bass] : '';
   return ROOT_DISPLAY[chord.root] + QUALITY_SUFFIX[chord.quality] + bass;
 }
 

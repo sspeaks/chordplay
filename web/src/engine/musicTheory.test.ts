@@ -328,4 +328,13 @@ describe('slashChordPitchClasses', () => {
     const result = slashChordPitchClasses('C', 'Major', 'C');
     expect(result).toEqual(['C', 'E', 'G', 'C']);
   });
+
+  it('non-chord-tone bass on chord without P5 (Dom13) → drops last PC', () => {
+    // Dom13 = [0,4,9,10] = C,E,A,Bb — no G (P5) to omit
+    // With bass F: need to drop one of the 4 chord tones
+    // Fallback drops last → [F, C, E, A]
+    const result = slashChordPitchClasses('C', 'Dom13', 'F');
+    expect(result).toHaveLength(4);
+    expect(result[0]).toBe('F');
+  });
 });

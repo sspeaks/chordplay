@@ -252,4 +252,14 @@ describe('parseRomanChord slash chords', () => {
       expect(result.value.bass).toBe('C');
     }
   });
+
+  it('V/B → G Major with bass B (bare numeral slash)', () => {
+    const result = parseRomanChord('V/B', key);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.root).toBe('G');
+      expect(result.value.quality).toBe('Major');
+      expect(result.value.bass).toBe('B');
+    }
+  });
 });

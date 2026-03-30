@@ -251,7 +251,7 @@ export default function App() {
       ? [currentVoicing[0]!, currentVoicing[1]!, currentVoicing[2]!, currentVoicing[3]!] 
       : null;
   const chordName = currentChord 
-    ? `${currentChord.root} ${currentChord.quality}${currentChord.bass ? ` / ${currentChord.bass}` : ''}${currentChord.inversion !== null ? ` (inv ${currentChord.inversion})` : ''}` 
+    ? `${currentChord.root} ${currentChord.quality}${currentChord.bass !== undefined ? ` / ${currentChord.bass}` : ''}${currentChord.inversion !== null ? ` (inv ${currentChord.inversion})` : ''}` 
     : '';
   
   const [debugLog, setDebugLog] = useState<string[]>([]);
