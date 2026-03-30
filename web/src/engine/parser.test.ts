@@ -239,6 +239,17 @@ describe('parseChordSequence', () => {
     expect(result).toHaveLength(17);
     expect(result.every(r => r.ok)).toBe(true);
   });
+  it('parses sequence with slash chords', () => {
+    const result = parseChordSequence('C/E Am7/G F C13');
+    expect(result).toHaveLength(4);
+    expect(result.every(r => r.ok)).toBe(true);
+    if (result[0]!.ok) {
+      expect(result[0]!.value.bass).toBe('E');
+    }
+    if (result[3]!.ok) {
+      expect(result[3]!.value.quality).toBe('Dom13');
+    }
+  });
 });
 
 describe('parseChordSequence with spelled chords', () => {

@@ -1,4 +1,4 @@
-import type { ChordType, ChordSymbol, ParseResult } from '../types';
+import type { ChordType, ChordSymbol, ParseResult, PitchClass } from '../types';
 import { parseSpelledChord } from './chordSpelling';
 import { resolveRoot } from './musicTheory';
 
@@ -70,14 +70,47 @@ export function parseChord(input: string): ParseResult<ChordSymbol> {
     return { ok: false, error: `Invalid note: ${letter}${accidental ?? ''}` };
   }
 
-  // Parse quality from remaining string
-  const rest = trimmed.slice(pos);
-  const quality = parseQuality(rest);
-  if (quality === null) {
-    return { ok: false, error: `Unknown quality: '${rest}'` };
+  // Parse quality from remaining string (up to slash or end)
+  let qualityStr = trimmed.slice(pos);
+  let bass: PitchClass | null = null;
+
+  // Check for slash chord
+  const slashIndex = qualityStr.indexOf('/');
+  if (slashIndex !== -1) {
+    const bassPart = qualityStr.slice(slashIndex + 1).trim();
+    qualityStr = qualityStr.slice(0, slashIndex);
+    
+    // Parse bass note
+    if (bassPart.length === 0) {
+      return { ok: false, error: 'Slash chord missing bass note' };
+    }
+    
+    const bassLetter = bassPart[0]!;
+    if (!/[A-G]/.test(bassLetter)) {
+      return { ok: false, error: `Invalid bass note: ${bassPart}` };
+    }
+    
+    let bassAccidental: string | null = null;
+    if (bassPart.length > 1 && (bassPart[1] === '#' || bassPart[1] === 'b')) {
+      bassAccidental = bassPart[1];
+    }
+    
+    const resolvedBass = resolveRoot(bassLetter, bassAccidental);
+    if (resolvedBass === null) {
+      return { ok: false, error: `Invalid bass note: ${bassPart}` };
+    }
+    bass = resolvedBass;
+    
+    // Slash chord overrides inversion
+    inversion = null;
   }
 
-  return { ok: true, value: { root, quality, inversion } };
+  const quality = parseQuality(qualityStr);
+  if (quality === null) {
+    return { ok: false, error: `Unknown quality: '${qualityStr}'` };
+  }
+
+  return { ok: true, value: { root, quality, inversion, ...(bass && { bass }) } };
 }
 
 export function parseChordSequence(input: string): ParseResult<ChordSymbol>[] {
