@@ -14,9 +14,56 @@
 
 ---
 
+## Prerequisites
+
+The Mac must have:
+- **Xcode 15.4+** with iOS 17 SDK and at least one iPad Simulator runtime
+- **Homebrew** (for XcodeGen)
+- **XcodeGen** — generates `.xcodeproj` from a YAML file, no GUI needed
+
+```bash
+# Install XcodeGen if not present
+brew install xcodegen
+
+# Verify everything
+xcodebuild -version                              # Xcode 15.4+
+swift --version                                   # Swift 5.10+
+which xcodegen                                    # should resolve
+xcrun simctl list devices available | grep iPad   # at least one iPad simulator
+```
+
+---
+
+## CLI Build & Test Commands
+
+All development is terminal-driven. **No Xcode GUI is ever required.**
+
+```bash
+# Detect available iPad simulator (run once, export for session)
+export IPAD_SIM=$(xcrun simctl list devices available | grep iPad | head -1 | sed 's/^ *//' | sed 's/ (.*//')
+echo "Using simulator: $IPAD_SIM"
+
+# Build the app
+xcodebuild -scheme ChordPlayiPad -destination "platform=iOS Simulator,name=$IPAD_SIM" \
+  build 2>&1 | tail -5
+
+# Run all tests
+xcodebuild -scheme ChordPlayiPad -destination "platform=iOS Simulator,name=$IPAD_SIM" \
+  test 2>&1 | tail -15
+
+# Regenerate .xcodeproj after adding/removing files (always safe to re-run)
+xcodegen generate
+```
+
+**Important:** Run `xcodegen generate` after creating new source files. XcodeGen auto-discovers files by directory, so adding a `.swift` file requires regenerating the project.
+
+---
+
 ## Context for the Implementing Agent
 
-You are building a **new Xcode project from scratch** — there is no existing Swift code. The music engine is a port of the TypeScript engine in `web/src/engine/`. The web app's test suite serves as a porting checklist.
+You are building a **new Xcode project from scratch** on macOS — there is no existing Swift code. The Xcode project is generated from `project.yml` via XcodeGen. **You never need to open Xcode.** All builds and tests run via `xcodebuild` on the command line.
+
+The music engine is a port of the TypeScript engine in `web/src/engine/`. The web app's test suite serves as a porting checklist.
 
 **Key domain knowledge:**
 - **Pitch classes:** 12 chromatic notes: C, C♯, D, D♯, E, F, F♯, G, G♯, A, A♯, B. Internally stored as `C, Cs, D, Ds, E, F, Fs, G, Gs, A, As, B`.
@@ -26,47 +73,49 @@ You are building a **new Xcode project from scratch** — there is no existing S
 - **Voice leading:** Minimize total voice movement between consecutive chords using a cost function that penalizes large jumps, chromatic clusters, unisons, and deviations from target spread/gravity
 - **9th chords:** Have 5 notes but only 4 voices, so the parser requires specifying which note to omit (e.g., `C9-5` = dominant 9th omitting the 5th)
 
-**Build & test commands (in Xcode):**
-```bash
-# From the Xcode project directory:
-xcodebuild -scheme ChordPlayiPad -destination 'platform=iOS Simulator,name=iPad Pro 13-inch (M4)' build
-xcodebuild -scheme ChordPlayiPad -destination 'platform=iOS Simulator,name=iPad Pro 13-inch (M4)' test
-# Or use Cmd+B (build) and Cmd+U (test) in Xcode
-```
+**TDD workflow for every task:**
+1. Write test file
+2. Run `xcodegen generate && xcodebuild ... test` (verify compile failure — test exists but implementation doesn't)
+3. Write implementation
+4. Run `xcodegen generate && xcodebuild ... test` (verify all tests pass)
+5. Commit
 
 ---
 
 ## File Structure
 
 ```
-ChordPlayiPad/
-├── ChordPlayiPadApp.swift                  # App entry point + SwiftData container
-├── Engine/                                  # Pure Swift — NO UIKit/SwiftUI imports
-│   ├── Types.swift                          # PitchClass, ChordType, Pitch, ChordSymbol, ParseResult
-│   ├── MusicTheory.swift                    # Pitch↔MIDI, frequencies, intervals, chord voicing
-│   ├── ChordParser.swift                    # Chord string → ChordSymbol parsing
-│   ├── VoiceLeading.swift                   # Smooth voice leading optimizer
-│   └── AudioSynthesizer.swift               # AVAudioEngine real-time synthesis
-├── Recognition/                             # Handwriting → chord pipeline
-│   ├── StrokeGrouper.swift                  # Group PencilKit strokes by proximity + debounce
-│   └── HandwritingRecognizer.swift          # Vision OCR + parser validation
-├── Models/                                  # SwiftData persistence
-│   ├── SheetMusicDocument.swift
-│   ├── PageAnnotation.swift
-│   └── ChordAnnotation.swift
-├── ViewModels/                              # State management
-│   ├── LibraryViewModel.swift               # Document list state
-│   ├── SheetViewModel.swift                 # Sheet view orchestration
-│   └── PlaybackManager.swift                # Audio playback state machine
-├── Views/                                   # SwiftUI views
-│   ├── LibraryView.swift                    # Document grid + import
-│   ├── SheetView.swift                      # Main workspace compositor
-│   ├── PDFPageView.swift                    # UIViewRepresentable for PDFKit
-│   ├── PencilCanvasView.swift               # UIViewRepresentable for PencilKit
-│   ├── ChordBadgeOverlay.swift              # Positioned chord badges
-│   ├── TransportBar.swift                   # Playback controls
-│   └── CorrectionPopover.swift              # Chord correction UI
-└── ChordPlayiPadTests/                      # XCTest target
+chordplay-ipad/                                  # Project root
+├── project.yml                                  # XcodeGen config (source of truth for .xcodeproj)
+├── .gitignore
+├── ChordPlayiPad/                               # App source directory
+│   ├── ChordPlayiPadApp.swift                   # App entry point + SwiftData container
+│   ├── Engine/                                  # Pure Swift — NO UIKit/SwiftUI imports
+│   │   ├── Types.swift                          # PitchClass, ChordType, Pitch, ChordSymbol, ParseResult
+│   │   ├── MusicTheory.swift                    # Pitch↔MIDI, frequencies, intervals, chord voicing
+│   │   ├── ChordParser.swift                    # Chord string → ChordSymbol parsing
+│   │   ├── VoiceLeading.swift                   # Smooth voice leading optimizer
+│   │   └── AudioSynthesizer.swift               # AVAudioEngine real-time synthesis
+│   ├── Recognition/                             # Handwriting → chord pipeline
+│   │   ├── StrokeGrouper.swift                  # Group PencilKit strokes by proximity + debounce
+│   │   └── HandwritingRecognizer.swift          # Vision OCR + parser validation
+│   ├── Models/                                  # SwiftData persistence
+│   │   ├── SheetMusicDocument.swift
+│   │   ├── PageAnnotation.swift
+│   │   └── ChordAnnotation.swift
+│   ├── ViewModels/                              # State management
+│   │   ├── LibraryViewModel.swift               # Document list state
+│   │   ├── SheetViewModel.swift                 # Sheet view orchestration
+│   │   └── PlaybackManager.swift                # Audio playback state machine
+│   └── Views/                                   # SwiftUI views
+│       ├── LibraryView.swift                    # Document grid + import
+│       ├── SheetView.swift                      # Main workspace compositor
+│       ├── PDFPageView.swift                    # UIViewRepresentable for PDFKit
+│       ├── PencilCanvasView.swift               # UIViewRepresentable for PencilKit
+│       ├── ChordBadgeOverlay.swift              # Positioned chord badges
+│       ├── TransportBar.swift                   # Playback controls
+│       └── CorrectionPopover.swift              # Chord correction UI
+└── ChordPlayiPadTests/                          # XCTest target (top-level for XcodeGen)
     ├── TypesTests.swift
     ├── MusicTheoryTests.swift
     ├── ChordParserTests.swift
@@ -80,54 +129,112 @@ ChordPlayiPad/
 
 ---
 
-## Task 1: Create Xcode Project
+## Task 1: Create Project via XcodeGen
 
 **Files:**
-- Create: Xcode project `ChordPlayiPad` with all directories above
+- Create: `project.yml`, `.gitignore`, `ChordPlayiPad/ChordPlayiPadApp.swift`, all directories
 
-- [ ] **Step 1: Create the Xcode project**
-
-Open Xcode → File → New → Project → App
-- Product Name: `ChordPlayiPad`
-- Team: (your personal team)
-- Organization Identifier: `com.chordplay`
-- Interface: SwiftUI
-- Language: Swift
-- Storage: SwiftData
-- Uncheck "Include Tests" (we'll add manually for control)
-- Set deployment target: iPadOS 17.0
-- Under General → Supported Destinations: remove iPhone, keep iPad only
-
-- [ ] **Step 2: Create directory structure**
-
-In Xcode, create groups (folders) matching the file structure above:
-```
-Engine/
-Recognition/
-Models/
-ViewModels/
-Views/
-```
-
-- [ ] **Step 3: Add test target**
-
-File → New → Target → Unit Testing Bundle
-- Product Name: `ChordPlayiPadTests`
-- Target to be Tested: `ChordPlayiPad`
-- Delete the auto-generated test file
-
-- [ ] **Step 4: Verify build**
-
-Press Cmd+B. Expect: Build Succeeded.
-
-- [ ] **Step 5: Initial commit**
+- [ ] **Step 1: Create project directory and file structure**
 
 ```bash
-cd ChordPlayiPad
+mkdir -p chordplay-ipad && cd chordplay-ipad
+mkdir -p ChordPlayiPad/Engine
+mkdir -p ChordPlayiPad/Recognition
+mkdir -p ChordPlayiPad/Models
+mkdir -p ChordPlayiPad/ViewModels
+mkdir -p ChordPlayiPad/Views
+mkdir -p ChordPlayiPadTests
+```
+
+- [ ] **Step 2: Write project.yml (XcodeGen config)**
+
+Create `project.yml`:
+
+```yaml
+name: ChordPlayiPad
+options:
+  bundleIdPrefix: com.chordplay
+  deploymentTarget:
+    iOS: "17.0"
+
+targets:
+  ChordPlayiPad:
+    type: application
+    platform: iOS
+    sources:
+      - ChordPlayiPad
+    settings:
+      base:
+        TARGETED_DEVICE_FAMILY: 2
+        INFOPLIST_KEY_UILaunchScreen_Generation: true
+        SWIFT_STRICT_CONCURRENCY: complete
+
+  ChordPlayiPadTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - ChordPlayiPadTests
+    dependencies:
+      - target: ChordPlayiPad
+    settings:
+      base:
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/ChordPlayiPad.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ChordPlayiPad"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+```
+
+- [ ] **Step 3: Create minimal app entry point**
+
+Create `ChordPlayiPad/ChordPlayiPadApp.swift`:
+
+```swift
+import SwiftUI
+
+@main
+struct ChordPlayiPadApp: App {
+    var body: some Scene {
+        WindowGroup {
+            Text("ChordPlay iPad")
+                .font(.largeTitle)
+        }
+    }
+}
+```
+
+- [ ] **Step 4: Create .gitignore**
+
+```bash
+cat > .gitignore << 'EOF'
+.DS_Store
+*.xcodeproj
+*.xcworkspace
+DerivedData/
+xcuserdata/
+EOF
+```
+
+**Note:** `.xcodeproj` is gitignored because XcodeGen regenerates it from `project.yml`. Run `xcodegen generate` after cloning.
+
+- [ ] **Step 5: Generate Xcode project and verify build**
+
+```bash
+xcodegen generate
+
+# Detect simulator and export for the session
+export IPAD_SIM=$(xcrun simctl list devices available | grep iPad | head -1 | sed 's/^ *//' | sed 's/ (.*//')
+echo "Using simulator: $IPAD_SIM"
+
+xcodebuild -scheme ChordPlayiPad \
+  -destination "platform=iOS Simulator,name=$IPAD_SIM" \
+  build 2>&1 | tail -5
+# Expect: ** BUILD SUCCEEDED **
+```
+
+- [ ] **Step 6: Initial commit**
+
+```bash
 git init
-echo '.DS_Store\n*.xcuserdata\nDerivedData/' > .gitignore
 git add .
-git commit -m "chore: initial Xcode project setup for ChordPlay iPad"
+git commit -m "chore: initial project setup via XcodeGen — iPad-only SwiftUI app"
 ```
 
 ---
@@ -212,7 +319,9 @@ struct TypesTests {
 
 - [ ] **Step 2: Run tests — expect compile error (Types not defined yet)**
 
-Run: Cmd+U
+```bash
+xcodegen generate && xcodebuild -scheme ChordPlayiPad -destination "platform=iOS Simulator,name=$IPAD_SIM" test 2>&1 | tail -15
+```
 Expected: Compile error — `PitchClass`, `Pitch`, etc. not found
 
 - [ ] **Step 3: Implement Types.swift**
@@ -340,7 +449,9 @@ enum PlayStyle: String, Sendable {
 
 - [ ] **Step 4: Run tests — expect all pass**
 
-Run: Cmd+U
+```bash
+xcodegen generate && xcodebuild -scheme ChordPlayiPad -destination "platform=iOS Simulator,name=$IPAD_SIM" test 2>&1 | tail -15
+```
 Expected: All TypesTests pass
 
 - [ ] **Step 5: Commit**
@@ -536,7 +647,9 @@ struct MusicTheoryTests {
 
 - [ ] **Step 2: Run tests — expect compile error**
 
-Run: Cmd+U
+```bash
+xcodegen generate && xcodebuild -scheme ChordPlayiPad -destination "platform=iOS Simulator,name=$IPAD_SIM" test 2>&1 | tail -15
+```
 Expected: Functions `pitchFrequency`, `chordIntervals`, etc. not found
 
 - [ ] **Step 3: Implement MusicTheory.swift**
@@ -714,7 +827,9 @@ func resolveRoot(letter: Character, accidental: Character?) -> PitchClass? {
 
 - [ ] **Step 4: Run tests — expect all pass**
 
-Run: Cmd+U
+```bash
+xcodegen generate && xcodebuild -scheme ChordPlayiPad -destination "platform=iOS Simulator,name=$IPAD_SIM" test 2>&1 | tail -15
+```
 Expected: All MusicTheoryTests pass
 
 - [ ] **Step 5: Commit**
@@ -977,7 +1092,9 @@ struct ChordParserTests {
 
 - [ ] **Step 2: Run tests — expect compile error**
 
-Run: Cmd+U
+```bash
+xcodegen generate && xcodebuild -scheme ChordPlayiPad -destination "platform=iOS Simulator,name=$IPAD_SIM" test 2>&1 | tail -15
+```
 Expected: `parseChord`, `parseChordSequence` not found
 
 - [ ] **Step 3: Implement ChordParser.swift**
@@ -1202,7 +1319,9 @@ private func parseNinthQuality(_ s: String) -> ChordType? {
 
 - [ ] **Step 4: Run tests — expect all pass**
 
-Run: Cmd+U
+```bash
+xcodegen generate && xcodebuild -scheme ChordPlayiPad -destination "platform=iOS Simulator,name=$IPAD_SIM" test 2>&1 | tail -15
+```
 Expected: All ChordParserTests pass
 
 - [ ] **Step 5: Commit**
@@ -1359,7 +1478,9 @@ struct VoiceLeadingTests {
 
 - [ ] **Step 2: Run tests — expect compile error**
 
-Run: Cmd+U
+```bash
+xcodegen generate && xcodebuild -scheme ChordPlayiPad -destination "platform=iOS Simulator,name=$IPAD_SIM" test 2>&1 | tail -15
+```
 Expected: `smoothVoice`, `voiceChordSequence`, `assignOctaves` not found
 
 - [ ] **Step 3: Implement VoiceLeading.swift**
@@ -1621,7 +1742,9 @@ private func voiceSlashChord(
 
 - [ ] **Step 4: Run tests — expect all pass**
 
-Run: Cmd+U
+```bash
+xcodegen generate && xcodebuild -scheme ChordPlayiPad -destination "platform=iOS Simulator,name=$IPAD_SIM" test 2>&1 | tail -15
+```
 Expected: All VoiceLeadingTests pass
 
 - [ ] **Step 5: Commit**
@@ -1700,7 +1823,9 @@ struct AudioSynthesizerTests {
 
 - [ ] **Step 2: Run tests — expect compile error**
 
-Run: Cmd+U
+```bash
+xcodegen generate && xcodebuild -scheme ChordPlayiPad -destination "platform=iOS Simulator,name=$IPAD_SIM" test 2>&1 | tail -15
+```
 Expected: `envelope`, `AudioConstants` not found
 
 - [ ] **Step 3: Implement AudioSynthesizer.swift**
@@ -1841,7 +1966,9 @@ final class AudioSynthesizer {
 
 - [ ] **Step 4: Run tests — expect all pass**
 
-Run: Cmd+U
+```bash
+xcodegen generate && xcodebuild -scheme ChordPlayiPad -destination "platform=iOS Simulator,name=$IPAD_SIM" test 2>&1 | tail -15
+```
 Expected: All AudioSynthesizerTests pass
 
 - [ ] **Step 5: Commit**
@@ -1971,7 +2098,9 @@ struct ChordPlayiPadApp: App {
 
 - [ ] **Step 5: Build and verify**
 
-Run: Cmd+B
+```bash
+xcodegen generate && xcodebuild -scheme ChordPlayiPad -destination "platform=iOS Simulator,name=$IPAD_SIM" build 2>&1 | tail -5
+```
 Expected: Build Succeeded (LibraryView doesn't exist yet — create a placeholder)
 
 Create a temporary `Views/LibraryView.swift`:
@@ -2100,7 +2229,9 @@ final class PlaybackManager {
 
 - [ ] **Step 2: Build and verify**
 
-Run: Cmd+B
+```bash
+xcodegen generate && xcodebuild -scheme ChordPlayiPad -destination "platform=iOS Simulator,name=$IPAD_SIM" build 2>&1 | tail -5
+```
 Expected: Build Succeeded
 
 - [ ] **Step 3: Commit**
@@ -2184,7 +2315,9 @@ struct PDFPageView: UIViewRepresentable {
 
 - [ ] **Step 2: Build and verify**
 
-Run: Cmd+B
+```bash
+xcodegen generate && xcodebuild -scheme ChordPlayiPad -destination "platform=iOS Simulator,name=$IPAD_SIM" build 2>&1 | tail -5
+```
 Expected: Build Succeeded
 
 - [ ] **Step 3: Commit**
@@ -2256,7 +2389,9 @@ struct PencilCanvasView: UIViewRepresentable {
 
 - [ ] **Step 2: Build and verify**
 
-Run: Cmd+B
+```bash
+xcodegen generate && xcodebuild -scheme ChordPlayiPad -destination "platform=iOS Simulator,name=$IPAD_SIM" build 2>&1 | tail -5
+```
 Expected: Build Succeeded
 
 - [ ] **Step 3: Commit**
@@ -2329,7 +2464,9 @@ struct HandwritingRecognizerTests {
 
 - [ ] **Step 2: Run tests — expect compile error**
 
-Run: Cmd+U
+```bash
+xcodegen generate && xcodebuild -scheme ChordPlayiPad -destination "platform=iOS Simulator,name=$IPAD_SIM" test 2>&1 | tail -15
+```
 Expected: `RecognitionCandidate`, `selectBestChord`, `fuzzyChordSuggestions` not found
 
 - [ ] **Step 3: Implement StrokeGrouper.swift**
@@ -2499,7 +2636,9 @@ enum HandwritingRecognizer {
 
 - [ ] **Step 5: Run tests — expect all pass**
 
-Run: Cmd+U
+```bash
+xcodegen generate && xcodebuild -scheme ChordPlayiPad -destination "platform=iOS Simulator,name=$IPAD_SIM" test 2>&1 | tail -15
+```
 Expected: All HandwritingRecognizerTests pass
 
 - [ ] **Step 6: Commit**
@@ -2668,7 +2807,9 @@ final class SheetViewModel {
 
 - [ ] **Step 2: Build and verify**
 
-Run: Cmd+B
+```bash
+xcodegen generate && xcodebuild -scheme ChordPlayiPad -destination "platform=iOS Simulator,name=$IPAD_SIM" build 2>&1 | tail -5
+```
 Expected: Build Succeeded
 
 - [ ] **Step 3: Commit**
@@ -2746,7 +2887,9 @@ struct ChordBadge: View {
 
 - [ ] **Step 2: Build and verify**
 
-Run: Cmd+B
+```bash
+xcodegen generate && xcodebuild -scheme ChordPlayiPad -destination "platform=iOS Simulator,name=$IPAD_SIM" build 2>&1 | tail -5
+```
 Expected: Build Succeeded
 
 - [ ] **Step 3: Commit**
@@ -2841,7 +2984,9 @@ struct TransportBar: View {
 
 - [ ] **Step 2: Build and verify**
 
-Run: Cmd+B
+```bash
+xcodegen generate && xcodebuild -scheme ChordPlayiPad -destination "platform=iOS Simulator,name=$IPAD_SIM" build 2>&1 | tail -5
+```
 Expected: Build Succeeded
 
 - [ ] **Step 3: Commit**
@@ -2946,7 +3091,9 @@ struct CorrectionPopover: View {
 
 - [ ] **Step 2: Build and verify**
 
-Run: Cmd+B
+```bash
+xcodegen generate && xcodebuild -scheme ChordPlayiPad -destination "platform=iOS Simulator,name=$IPAD_SIM" build 2>&1 | tail -5
+```
 Expected: Build Succeeded
 
 - [ ] **Step 3: Commit**
@@ -3048,7 +3195,9 @@ extension Int: @retroactive Identifiable {
 
 - [ ] **Step 2: Build and verify**
 
-Run: Cmd+B
+```bash
+xcodegen generate && xcodebuild -scheme ChordPlayiPad -destination "platform=iOS Simulator,name=$IPAD_SIM" build 2>&1 | tail -5
+```
 Expected: Build Succeeded
 
 - [ ] **Step 3: Commit**
@@ -3263,7 +3412,9 @@ struct DocumentCard: View {
 
 - [ ] **Step 3: Build and verify on iPad Simulator**
 
-Run: Cmd+R (run on iPad Simulator)
+```bash
+xcodegen generate && xcodebuild -scheme ChordPlayiPad -destination "platform=iOS Simulator,name=$IPAD_SIM" build 2>&1 | tail -5
+```
 Expected: App launches showing "No Sheet Music" empty state with Import button
 
 - [ ] **Step 4: Commit**
@@ -3279,7 +3430,9 @@ git commit -m "feat: add Library view — document grid, PDF import, thumbnails,
 
 - [ ] **Step 1: Run full test suite**
 
-Run: Cmd+U
+```bash
+xcodegen generate && xcodebuild -scheme ChordPlayiPad -destination "platform=iOS Simulator,name=$IPAD_SIM" test 2>&1 | tail -15
+```
 Expected: All engine tests pass (Types, MusicTheory, ChordParser, VoiceLeading, AudioSynthesizer, HandwritingRecognizer)
 
 - [ ] **Step 2: Manual test on iPad Simulator**
@@ -3293,7 +3446,9 @@ Expected: All engine tests pass (Types, MusicTheory, ChordParser, VoiceLeading, 
 
 - [ ] **Step 3: Fix any build warnings**
 
-Run: Cmd+B, check Issue Navigator (Cmd+5)
+```bash
+xcodegen generate && xcodebuild -scheme ChordPlayiPad -destination "platform=iOS Simulator,name=$IPAD_SIM" build 2>&1 | grep -E "warning:|error:" | head -20
+```
 Fix any Swift warnings (unused variables, deprecation, etc.)
 
 - [ ] **Step 4: Final commit**
