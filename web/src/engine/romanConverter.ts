@@ -10,6 +10,11 @@ import {
   pcToStandardName,
 } from './romanNumerals';
 
+function octaveShiftSuffix(shift: number | undefined): string {
+  if (!shift) return '';
+  return shift > 0 ? '^'.repeat(shift) : '_'.repeat(-shift);
+}
+
 function standardQualitySuffix(quality: ChordType): string {
   const MAP: Record<ChordType, string> = {
     Major: '', Minor: 'm', Dom7: '7', Maj7: 'maj7', Min7: 'm7',
@@ -107,13 +112,14 @@ export function chordTextToRoman(text: string, key: KeySignature): string {
     const bassStr = chord.bass !== undefined
       ? '/' + pcToStandardName(chord.bass, isSharpKey(key))
       : '';
+    const shiftSuffix = octaveShiftSuffix(chord.octaveShift);
 
     if (secDom) {
       const secQual = chord.quality === 'Dom7' ? '7' : '';
-      return `${invPrefix}V${secQual}/${secDom}`;
+      return `${invPrefix}V${secQual}/${secDom}${shiftSuffix}`;
     }
 
-    return `${invPrefix}${accStr}${numeral}${qualSuffix}${bassStr}`;
+    return `${invPrefix}${accStr}${numeral}${qualSuffix}${bassStr}${shiftSuffix}`;
   }).join('');
 }
 
@@ -139,7 +145,8 @@ export function romanTextToStandard(text: string, key: KeySignature): string {
     const bassStr = chord.bass !== undefined
       ? '/' + pcToStandardName(chord.bass, useSharps)
       : '';
+    const shiftSuffix = octaveShiftSuffix(chord.octaveShift);
 
-    return `${invPrefix}${rootName}${qualSuffix}${bassStr}`;
+    return `${invPrefix}${rootName}${qualSuffix}${bassStr}${shiftSuffix}`;
   }).join('');
 }

@@ -156,6 +156,23 @@ describe('parseRomanChord', () => {
   it('invalid quality suffix fails', () => {
     expectFail('Ixyz', Cmaj);
   });
+
+  // Octave shift
+  it('V7^ in C = G Dom7 octaveShift 1', () => {
+    expectChord('V7^', Cmaj, { root: 'G', quality: 'Dom7', inversion: null, octaveShift: 1 });
+  });
+  it('IV__ in C = F Major octaveShift -2', () => {
+    expectChord('IV__', Cmaj, { root: 'F', quality: 'Major', inversion: null, octaveShift: -2 });
+  });
+  it('1V7^ in C = G Dom7 inversion 1 octaveShift 1', () => {
+    expectChord('1V7^', Cmaj, { root: 'G', quality: 'Dom7', inversion: 1, octaveShift: 1 });
+  });
+  it('V7/V^ in C = D Dom7 octaveShift 1', () => {
+    expectChord('V7/V^', Cmaj, { root: 'D', quality: 'Dom7', inversion: null, octaveShift: 1 });
+  });
+  it('mixed ^_ in Roman fails', () => {
+    expectFail('I^_', Cmaj);
+  });
 });
 
 describe('parseRomanSequence', () => {

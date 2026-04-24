@@ -36,7 +36,21 @@ export function parseRomanChord(input: string, key: KeySignature): ParseResult<C
     return { ok: false, error: `Expected Roman numeral (I-VII), got '${trimmed.slice(pos)}'` };
   }
 
-  const { degree, upper, rest } = numeralResult;
+  const { degree, upper, rest: rawRest } = numeralResult;
+
+  // Strip trailing octave shift before slash parsing (V7/V^ has shift at end)
+  const shiftMatch = rawRest.match(/([_^]+)$/);
+  const rest = shiftMatch ? rawRest.slice(0, -shiftMatch[1]!.length) : rawRest;
+  let octaveShift: number | undefined;
+  if (shiftMatch) {
+    const chars = shiftMatch[1]!;
+    const hasUp = chars.includes('^');
+    const hasDown = chars.includes('_');
+    if (hasUp && hasDown) {
+      return { ok: false, error: "Cannot mix ^ and _ in octave shift" };
+    }
+    octaveShift = hasUp ? chars.length : -chars.length;
+  }
 
   const slashIdx = rest.indexOf('/');
   let qualityStr: string;
@@ -97,7 +111,16 @@ export function parseRomanChord(input: string, key: KeySignature): ParseResult<C
     root = scaleDegreeToPC(key, degree, accidental);
   }
 
-  return { ok: true, value: { root, quality, inversion, ...(slashBass !== undefined && { bass: slashBass }) } };
+  return {
+    ok: true,
+    value: {
+      root,
+      quality,
+      inversion,
+      ...(slashBass !== undefined && { bass: slashBass }),
+      ...(octaveShift !== undefined ? { octaveShift } : {}),
+    },
+  };
 }
 
 export function parseRomanSequence(input: string, key: KeySignature): ParseResult<ChordSymbol>[] {
