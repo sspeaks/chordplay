@@ -27,6 +27,7 @@ export interface ChordSymbol {
   readonly bass?: PitchClass;                // slash chord bass note (e.g., C/E → bass: 'E')
   readonly explicitVoicing?: PitchClass[];  // bypass voice leading, play these notes in order
   readonly warning?: boolean;               // true if notes didn't match any known chord type
+  readonly octaveShift?: number;      // undefined/0 = default, +N = up N octaves, -N = down
 }
 
 export type Tuning = 'just' | 'equal';
