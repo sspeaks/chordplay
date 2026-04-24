@@ -113,26 +113,22 @@ export function voiceChord(root: PitchClass, ct: ChordType, inv: number): Pitch[
   const baseMidi = pitchToMidi({ pitchClass: root, octave: 3 });
   const intervals = chordIntervals(ct);
   const basePitches = intervals.map(i => midiToPitch(baseMidi + i));
-  const clampedInv = Math.max(-3, Math.min(3, inv));
-  return applyInversion(clampedInv, basePitches);
+  const clampedInv = Math.max(0, Math.min(intervals.length - 1, inv));
+  if (clampedInv === 0) return basePitches;
+
+  // Pull the inv-th pitch below all others
+  const others = [...basePitches.slice(0, clampedInv), ...basePitches.slice(clampedInv + 1)];
+  const lowestOtherMidi = Math.min(...others.map(pitchToMidi));
+  let bassMidi = pitchToMidi(basePitches[clampedInv]!);
+  while (bassMidi >= lowestOtherMidi) bassMidi -= 12;
+
+  return [midiToPitch(bassMidi), ...others].sort((a, b) => pitchToMidi(a) - pitchToMidi(b));
 }
 
-function applyInversion(n: number, ps: Pitch[]): Pitch[] {
-  if (n === 0 || ps.length === 0) return ps;
-  if (n > 0) return applyInversion(n - 1, rotateUp(ps));
-  return applyInversion(n + 1, rotateDown(ps));
-}
-
-function rotateUp(ps: Pitch[]): Pitch[] {
-  if (ps.length === 0) return ps;
-  const [first, ...rest] = ps;
-  return [...rest, { pitchClass: first!.pitchClass, octave: first!.octave + 1 }];
-}
-
-function rotateDown(ps: Pitch[]): Pitch[] {
-  if (ps.length === 0) return ps;
-  const last = ps[ps.length - 1]!;
-  return [{ pitchClass: last.pitchClass, octave: last.octave - 1 }, ...ps.slice(0, -1)];
+export function inversionBassPC(root: PitchClass, ct: ChordType, inv: number): PitchClass {
+  const intervals = chordIntervals(ct);
+  const clampedInv = Math.max(0, Math.min(intervals.length - 1, inv));
+  return pitchClassFromInt(pitchClassToInt(root) + intervals[clampedInv]!);
 }
 
 export function nearestPitch(pc: PitchClass, targetMidi: number): Pitch {

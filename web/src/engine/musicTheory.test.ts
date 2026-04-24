@@ -133,15 +133,51 @@ describe('voiceChord', () => {
     const pitches = voiceChord('C', 'Major', 0);
     expect(pitches[0]).toEqual({ pitchClass: 'C', octave: 3 });
   });
-  it('inversions stay in [-3,3]', () => {
+  it('1st inversion puts 2nd chord tone in bass, below root', () => {
+    const first = voiceChord('C', 'Major', 1);
+    const midis = first.map(pitchToMidi).sort((a, b) => a - b);
+    // E should be the lowest note
+    expect(first.find(p => pitchToMidi(p) === midis[0])!.pitchClass).toBe('E');
+    // Bass should be below root position's lowest note (C3 = 48)
+    expect(midis[0]).toBeLessThan(48);
+  });
+  it('1st inversion D major: F# is bass', () => {
+    const inv1 = voiceChord('D', 'Major', 1);
+    const sorted = [...inv1].sort((a, b) => pitchToMidi(a) - pitchToMidi(b));
+    expect(sorted[0]!.pitchClass).toBe('Fs');
+    // F#2 = MIDI 42, below D3 = MIDI 50
+    expect(pitchToMidi(sorted[0]!)).toBe(42);
+  });
+  it('2nd inversion D7: A is bass', () => {
+    const inv2 = voiceChord('D', 'Dom7', 2);
+    const sorted = [...inv2].sort((a, b) => pitchToMidi(a) - pitchToMidi(b));
+    expect(sorted[0]!.pitchClass).toBe('A');
+    expect(pitchToMidi(sorted[0]!)).toBe(45); // A2
+  });
+  it('3rd inversion D7: C is bass', () => {
+    const inv3 = voiceChord('D', 'Dom7', 3);
+    const sorted = [...inv3].sort((a, b) => pitchToMidi(a) - pitchToMidi(b));
+    expect(sorted[0]!.pitchClass).toBe('C');
+  });
+  it('all 4 notes preserved in inversions', () => {
+    const root = voiceChord('D', 'Dom7', 0);
+    const inv1 = voiceChord('D', 'Dom7', 1);
+    const inv2 = voiceChord('D', 'Dom7', 2);
+    for (const voicing of [root, inv1, inv2]) {
+      expect(voicing).toHaveLength(4);
+      const midis = new Set(voicing.map(pitchToMidi));
+      expect(midis.size).toBe(4); // no unisons
+    }
+  });
+  it('negative inversion clamped to root position', () => {
+    const neg = voiceChord('C', 'Major', -1);
+    const root = voiceChord('C', 'Major', 0);
+    expect(neg).toEqual(root);
+  });
+  it('inversion clamped to max index', () => {
     const inv3 = voiceChord('C', 'Major', 3);
     const inv4 = voiceChord('C', 'Major', 4); // clamped to 3
     expect(inv3).toEqual(inv4);
-  });
-  it('1st inversion rotates lowest note up an octave', () => {
-    const root = voiceChord('C', 'Major', 0);
-    const first = voiceChord('C', 'Major', 1);
-    expect(pitchToMidi(first[0]!)).toBeGreaterThan(pitchToMidi(root[0]!));
   });
 });
 
