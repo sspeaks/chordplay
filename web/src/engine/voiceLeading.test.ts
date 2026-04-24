@@ -66,14 +66,136 @@ describe('voiceChordSequence', () => {
     }
   });
 
-  it('explicit inversion overrides smooth', () => {
+  it('inversion forces correct bass note in smooth mode', () => {
     const chords: ChordSymbol[] = [
-      { root: 'C', quality: 'Major', inversion: null },
-      { root: 'G', quality: 'Major', inversion: 2 },
+      { root: 'D', quality: 'Major', inversion: null },
+      { root: 'D', quality: 'Major', inversion: 1 },  // F# bass
     ];
     const result = voiceChordSequence('equal', chords);
-    const forced = voiceChord('G', 'Major', 2);
-    expect(result[1]).toEqual(forced);
+    const secondSorted = [...result[1]!].sort((a, b) => pitchToMidi(a) - pitchToMidi(b));
+    expect(secondSorted[0]!.pitchClass).toBe('Fs');
+  });
+
+  it('inversion stays in similar register to previous chord', () => {
+    const chords: ChordSymbol[] = [
+      { root: 'D', quality: 'Major', inversion: null },
+      { root: 'D', quality: 'Major', inversion: 1 },
+    ];
+    const result = voiceChordSequence('equal', chords);
+    const prevCentroid = result[0]!.map(pitchToMidi).reduce((a, b) => a + b, 0) / 4;
+    const currCentroid = result[1]!.map(pitchToMidi).reduce((a, b) => a + b, 0) / 4;
+    // Centroids should be within an octave of each other
+    expect(Math.abs(prevCentroid - currCentroid)).toBeLessThan(12);
+  });
+
+  it('inversion bass is lowest voice', () => {
+    const chords: ChordSymbol[] = [
+      { root: 'C', quality: 'Major', inversion: null },
+      { root: 'G', quality: 'Dom7', inversion: 2 },  // D bass
+    ];
+    const result = voiceChordSequence('bass', chords);
+    const sorted = [...result[1]!].sort((a, b) => pitchToMidi(a) - pitchToMidi(b));
+    expect(sorted[0]!.pitchClass).toBe('D');
+  });
+
+  it('sequence D → 1D → G has smooth upper voices', () => {
+    const chords: ChordSymbol[] = [
+      { root: 'D', quality: 'Major', inversion: null },
+      { root: 'D', quality: 'Major', inversion: 1 },
+      { root: 'G', quality: 'Major', inversion: null },
+    ];
+    const result = voiceChordSequence('equal', chords);
+    expect(result).toHaveLength(3);
+    // All voicings have 4 notes
+    result.forEach(v => expect(v).toHaveLength(4));
+  });
+
+  it('explicit 0 inversion forces root in bass in smooth mode', () => {
+    const chords: ChordSymbol[] = [
+      { root: 'C', quality: 'Major', inversion: null },
+      { root: 'G', quality: 'Major', inversion: 0 },  // explicit root position
+    ];
+    const result = voiceChordSequence('equal', chords);
+    const sorted = [...result[1]!].sort((a, b) => pitchToMidi(a) - pitchToMidi(b));
+    expect(sorted[0]!.pitchClass).toBe('G');
+  });
+
+  it('octave shift up produces higher voicing (voice leading on)', () => {
+    const normal: ChordSymbol[] = [
+      { root: 'D', quality: 'Major', inversion: null },
+    ];
+    const shifted: ChordSymbol[] = [
+      { root: 'D', quality: 'Major', inversion: null, octaveShift: 1 },
+    ];
+    const normalResult = voiceChordSequence('equal', normal);
+    const shiftedResult = voiceChordSequence('equal', shifted);
+    const normalCentroid = normalResult[0]!.map(pitchToMidi).reduce((a, b) => a + b, 0) / 4;
+    const shiftedCentroid = shiftedResult[0]!.map(pitchToMidi).reduce((a, b) => a + b, 0) / 4;
+    expect(shiftedCentroid - normalCentroid).toBeGreaterThanOrEqual(10);
+  });
+
+  it('octave shift down produces lower voicing (voice leading on)', () => {
+    const normal: ChordSymbol[] = [
+      { root: 'D', quality: 'Major', inversion: null },
+    ];
+    const shifted: ChordSymbol[] = [
+      { root: 'D', quality: 'Major', inversion: null, octaveShift: -1 },
+    ];
+    const normalResult = voiceChordSequence('equal', normal);
+    const shiftedResult = voiceChordSequence('equal', shifted);
+    const normalCentroid = normalResult[0]!.map(pitchToMidi).reduce((a, b) => a + b, 0) / 4;
+    const shiftedCentroid = shiftedResult[0]!.map(pitchToMidi).reduce((a, b) => a + b, 0) / 4;
+    expect(normalCentroid - shiftedCentroid).toBeGreaterThanOrEqual(10);
+  });
+
+  it('octave shift works when voice leading is off', () => {
+    const normal: ChordSymbol[] = [
+      { root: 'D', quality: 'Major', inversion: null },
+    ];
+    const shifted: ChordSymbol[] = [
+      { root: 'D', quality: 'Major', inversion: null, octaveShift: 1 },
+    ];
+    const normalResult = voiceChordSequence(null, normal);
+    const shiftedResult = voiceChordSequence(null, shifted);
+    const normalMidis = normalResult[0]!.map(pitchToMidi);
+    const shiftedMidis = shiftedResult[0]!.map(pitchToMidi);
+    // Each note should be exactly 12 semitones higher
+    for (let i = 0; i < 4; i++) {
+      expect(shiftedMidis[i]! - normalMidis[i]!).toBe(12);
+    }
+  });
+
+  it('combined inversion + octave shift', () => {
+    const chords: ChordSymbol[] = [
+      { root: 'D', quality: 'Dom7', inversion: 1, octaveShift: 1 },
+    ];
+    const result = voiceChordSequence(null, chords);
+    const sorted = [...result[0]!].sort((a, b) => pitchToMidi(a) - pitchToMidi(b));
+    // F# should be bass (inversion 1)
+    expect(sorted[0]!.pitchClass).toBe('Fs');
+    // Everything should be ~12 higher than non-shifted inversion 1
+    const unshifted = voiceChordSequence(null, [
+      { root: 'D', quality: 'Dom7', inversion: 1 },
+    ]);
+    const unshiftedMidis = unshifted[0]!.map(pitchToMidi).sort((a, b) => a - b);
+    const shiftedMidis = sorted.map(pitchToMidi);
+    for (let i = 0; i < 4; i++) {
+      expect(shiftedMidis[i]! - unshiftedMidis[i]!).toBe(12);
+    }
+  });
+
+  it('mid-sequence octave shift raises voicing in smooth mode', () => {
+    const chords: ChordSymbol[] = [
+      { root: 'D', quality: 'Major', inversion: null },
+      { root: 'A', quality: 'Dom7', inversion: null },
+      { root: 'D', quality: 'Major', inversion: null, octaveShift: 1 },
+      { root: 'G', quality: 'Major', inversion: null },
+    ];
+    const result = voiceChordSequence('equal', chords);
+    const centroid2 = result[1]!.map(pitchToMidi).reduce((a, b) => a + b, 0) / 4;
+    const centroid3 = result[2]!.map(pitchToMidi).reduce((a, b) => a + b, 0) / 4;
+    // The shifted chord should be noticeably higher
+    expect(centroid3).toBeGreaterThan(centroid2 + 5);
   });
 });
 
