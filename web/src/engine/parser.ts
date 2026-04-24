@@ -70,14 +70,31 @@ export function parseChord(input: string): ParseResult<ChordSymbol> {
     return { ok: false, error: `Invalid note: ${letter}${accidental ?? ''}` };
   }
 
-  // Check for slash bass: /[A-G][#b]? at end of remaining string
+  // Parse remaining string: strip octave shift, then slash bass, then quality
   const rest = trimmed.slice(pos);
-  let qualityStr = rest;
+
+  // Strip trailing ^ or _ for octave shift (before slash bass check)
+  const shiftMatch = rest.match(/([_^]+)$/);
+  const afterShift = shiftMatch ? rest.slice(0, -shiftMatch[1]!.length) : rest;
+
+  let octaveShift: number | undefined;
+  if (shiftMatch) {
+    const chars = shiftMatch[1]!;
+    const hasUp = chars.includes('^');
+    const hasDown = chars.includes('_');
+    if (hasUp && hasDown) {
+      return { ok: false, error: "Cannot mix ^ and _ in octave shift" };
+    }
+    octaveShift = hasUp ? chars.length : -chars.length;
+  }
+
+  // Check for slash bass: /[A-G][#b]? at end of remaining string
+  let qualityStr = afterShift;
   let bass: PitchClass | undefined;
 
-  const slashMatch = rest.match(/\/([A-G][#b]?)$/);
+  const slashMatch = afterShift.match(/\/([A-G][#b]?)$/);
   if (slashMatch) {
-    qualityStr = rest.slice(0, slashMatch.index);
+    qualityStr = afterShift.slice(0, slashMatch.index);
     const bassLetter = slashMatch[1]![0]!;
     const bassAccidental = slashMatch[1]!.length > 1 ? slashMatch[1]![1]! : null;
     const bassPC = resolveRoot(bassLetter, bassAccidental);
@@ -87,7 +104,6 @@ export function parseChord(input: string): ParseResult<ChordSymbol> {
     bass = bassPC;
   }
 
-  // Parse quality from remaining string (without slash suffix)
   const quality = parseQuality(qualityStr);
   if (quality === null) {
     return { ok: false, error: `Unknown quality: '${qualityStr}'` };
@@ -96,7 +112,16 @@ export function parseChord(input: string): ParseResult<ChordSymbol> {
   // Slash overrides inversion
   const finalInversion = bass !== undefined ? null : inversion;
 
-  return { ok: true, value: { root, quality, inversion: finalInversion, ...(bass !== undefined && { bass }) } };
+  return {
+    ok: true,
+    value: {
+      root,
+      quality,
+      inversion: finalInversion,
+      ...(bass !== undefined && { bass }),
+      ...(octaveShift !== undefined ? { octaveShift } : {}),
+    },
+  };
 }
 
 export function parseChordSequence(input: string): ParseResult<ChordSymbol>[] {

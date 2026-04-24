@@ -149,6 +149,35 @@ describe('parseChord', () => {
     expectChord('0C', { root: 'C', quality: 'Major', inversion: 0 });
   });
 
+  // Octave shift
+  it('D7^ → D Dom7 octaveShift 1', () => {
+    expectChord('D7^', { root: 'D', quality: 'Dom7', inversion: null, octaveShift: 1 });
+  });
+  it('D^^ → D Major octaveShift 2', () => {
+    expectChord('D^^', { root: 'D', quality: 'Major', inversion: null, octaveShift: 2 });
+  });
+  it('D_ → D Major octaveShift -1', () => {
+    expectChord('D_', { root: 'D', quality: 'Major', inversion: null, octaveShift: -1 });
+  });
+  it('D__ → D Major octaveShift -2', () => {
+    expectChord('D__', { root: 'D', quality: 'Major', inversion: null, octaveShift: -2 });
+  });
+  it('D^^^ → D Major octaveShift 3', () => {
+    expectChord('D^^^', { root: 'D', quality: 'Major', inversion: null, octaveShift: 3 });
+  });
+  it('1D7^ → D Dom7 inversion 1 octaveShift 1', () => {
+    expectChord('1D7^', { root: 'D', quality: 'Dom7', inversion: 1, octaveShift: 1 });
+  });
+  it('Ebm7^^ → Eb Min7 octaveShift 2', () => {
+    expectChord('Ebm7^^', { root: 'Ds', quality: 'Min7', inversion: null, octaveShift: 2 });
+  });
+  it('Cm9-5^ → C Min9no5 octaveShift 1', () => {
+    expectChord('Cm9-5^', { root: 'C', quality: 'Min9no5', inversion: null, octaveShift: 1 });
+  });
+  it('mixed ^_ fails', () => {
+    expectFail('D^_');
+  });
+
   // Errors
   it('empty string fails', () => {
     expectFail('');
