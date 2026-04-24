@@ -261,7 +261,7 @@ export function voiceChordSequence(
 }
 
 function voiceWithConstrainedBass(
-  mode: SmoothMode,
+  _mode: SmoothMode,
   prev: Pitch[],
   chord: ChordSymbol,
   options?: VoiceLeadingOptions,
