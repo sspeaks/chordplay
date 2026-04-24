@@ -53,10 +53,12 @@ export default function SyntaxReference({ isOpen, onClose }: SyntaxReferenceProp
             <span className="fmt-inversion">[inversion]</span>
             <span className="fmt-root">root</span>
             <span className="fmt-quality">quality</span>
+            <span className="fmt-inversion">[octave shift]</span>
           </div>
           <p className="format-desc">
             Inversion is optional (defaults to automatic in smooth mode).
             Root is required. Quality defaults to Major if omitted.
+            Octave shift is optional — use <code>^</code> to go up or <code>_</code> to go down.
           </p>
         </section>
         
@@ -117,10 +119,21 @@ export default function SyntaxReference({ isOpen, onClose }: SyntaxReferenceProp
           <h3>Inversions</h3>
           <div className="inversion-info">
             <p><strong>0</strong> = Root position</p>
-            <p><strong>1</strong> = 1st inversion (↑ 3rd to bass)</p>
-            <p><strong>2</strong> = 2nd inversion (↑ 5th to bass)</p>
-            <p><strong>3</strong> = 3rd inversion (↑ 7th to bass, if present)</p>
+            <p><strong>1</strong> = 1st inversion (3rd in bass)</p>
+            <p><strong>2</strong> = 2nd inversion (5th in bass)</p>
+            <p><strong>3</strong> = 3rd inversion (7th in bass, if present)</p>
             <p><em>Omit for automatic voice leading in smooth modes</em></p>
+          </div>
+        </section>
+
+        <section className="octave-shift-section">
+          <h3>Octave Shift</h3>
+          <div className="inversion-info">
+            <p><code>D7^</code> = Up 1 octave</p>
+            <p><code>D7^^</code> = Up 2 octaves</p>
+            <p><code>D7_</code> = Down 1 octave</p>
+            <p><code>D7__</code> = Down 2 octaves</p>
+            <p><em>Combinable with inversions: <code>1D7^</code></em></p>
           </div>
         </section>
 
