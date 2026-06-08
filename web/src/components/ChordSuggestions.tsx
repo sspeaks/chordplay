@@ -1,22 +1,15 @@
 import { useMemo } from 'react';
-import type { ChordSymbol, KeySignature } from '../types';
+import type { KeySignature, QualityChordSymbol } from '../types';
 import { generateSuggestions } from '../engine/chordSuggestions';
-
-const ROOT_DISPLAY: Record<string, string> = {
-  C: 'C', Cs: 'C♯', D: 'D', Ds: 'E♭', E: 'E', F: 'F',
-  Fs: 'F♯', G: 'G', Gs: 'A♭', A: 'A', As: 'B♭', B: 'B',
-};
-const QUAL_DISPLAY: Record<string, string> = {
-  Major: '', Minor: 'm', Dom7: '7', Maj7: 'maj7', Min7: 'm7',
-};
+import { chordDisplayName } from '../engine/chordSpelling';
 
 interface ChordSuggestionsProps {
-  currentChord: ChordSymbol | null;
+  currentChord: QualityChordSymbol | null;
   selectedKey: KeySignature;
   isPlaying: boolean;
   isOpen: boolean;
   onToggle: () => void;
-  onPreview: (chord: ChordSymbol) => void;
+  onPreview: (chord: QualityChordSymbol) => void;
   onInsert: (text: string) => void;
 }
 
@@ -36,8 +29,7 @@ export default function ChordSuggestions({
 
   if (!currentChord) return null;
 
-  const currentLabel = (ROOT_DISPLAY[currentChord.root] ?? currentChord.root)
-    + (QUAL_DISPLAY[currentChord.quality] ?? currentChord.quality);
+  const currentLabel = chordDisplayName(currentChord);
 
   return (
     <div className={`suggestions-panel ${isOpen ? 'open' : 'collapsed'} ${isPlaying ? 'disabled' : ''}`}>

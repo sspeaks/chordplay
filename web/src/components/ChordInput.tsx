@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import type { ParseResult, ChordSymbol } from '../types';
+import { isSpelledChord, type ParseResult, type ChordSymbol } from '../types';
 import { tokenizeChordInput } from '../engine/parser';
 import { chordDisplayName } from '../engine/chordSpelling';
 
@@ -51,7 +51,7 @@ export default function ChordInput({
       const isValid = result?.ok ?? false;
       const chord = isValid ? (result as { ok: true; value: ChordSymbol }).value : null;
       const isWarning = !!(chord?.warning);
-      const hasExplicit = !!(chord?.explicitVoicing);
+      const hasExplicit = !!(chord?.explicitVoicing) || isSpelledChord(chord);
       const tooltip = hasExplicit ? chordDisplayName(chord!) : undefined;
       const validIndex = isValid
         ? parseResults.slice(0, chordIdx + 1).filter(r => r.ok).length - 1

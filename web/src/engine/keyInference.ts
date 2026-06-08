@@ -1,4 +1,12 @@
-import { PITCH_CLASSES, type PitchClass, type ChordType, type ChordSymbol, type KeySignature } from '../types';
+import {
+  PITCH_CLASSES,
+  hasChordQuality,
+  type PitchClass,
+  type ChordType,
+  type ChordSymbol,
+  type KeySignature,
+  type QualityChordSymbol,
+} from '../types';
 import { pitchClassToInt } from './musicTheory';
 
 const MAJOR_SCALE = [0, 2, 4, 5, 7, 9, 11] as const;
@@ -23,7 +31,7 @@ function isTonicMinorQuality(quality: ChordType): boolean {
   return quality === 'Minor' || quality === 'Min7' || quality === 'Min6' || quality === 'MinMaj7';
 }
 
-function scoreKey(chords: ChordSymbol[], root: PitchClass, quality: 'major' | 'minor'): number {
+function scoreKey(chords: QualityChordSymbol[], root: PitchClass, quality: 'major' | 'minor'): number {
   const rootInt = pitchClassToInt(root);
   const scale = quality === 'major' ? MAJOR_SCALE : MINOR_SCALE;
   let score = 0;
@@ -61,7 +69,8 @@ const KEY_COMPLEXITY: Record<string, number> = {
 };
 
 export function inferKey(chords: ChordSymbol[]): KeySignature {
-  if (chords.length === 0) {
+  const qualityChords = chords.filter(hasChordQuality);
+  if (qualityChords.length === 0) {
     return { root: 'C', quality: 'major' };
   }
 
@@ -73,7 +82,7 @@ export function inferKey(chords: ChordSymbol[]): KeySignature {
 
   for (const root of PITCH_CLASSES) {
     for (const quality of qualities) {
-      const score = scoreKey(chords, root, quality);
+      const score = scoreKey(qualityChords, root, quality);
       const complexity = KEY_COMPLEXITY[`${root}-${quality}`] ?? 6;
 
       if (

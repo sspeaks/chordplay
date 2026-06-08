@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { generateSuggestions, scoreChord, chordSymbolToText, insertChordAfterIndex } from './chordSuggestions';
 import { parseChordSequence } from './parser';
-import type { ChordSymbol, KeySignature } from '../types';
+import type { ChordSymbol, KeySignature, QualityChordSymbol } from '../types';
 
-function chord(root: string, quality: string = 'Major'): ChordSymbol {
+function chord(root: string, quality: string = 'Major'): QualityChordSymbol {
   return { root: root as any, quality: quality as any, inversion: null };
 }
 
@@ -85,6 +85,17 @@ describe('generateSuggestions', () => {
       expect(suggestions[i]!.score).toBeLessThanOrEqual(suggestions[i - 1]!.score);
     }
   });
+
+  it('returns no suggestions for non-quality spelled events', () => {
+    const current: ChordSymbol = {
+      kind: 'spelled',
+      root: 'A',
+      inversion: null,
+      explicitVoicing: ['A'],
+      notes: [{ pitchClass: 'A', octave: 7 }],
+    };
+    expect(generateSuggestions(current, C_MAJOR)).toEqual([]);
+  });
 });
 
 describe('chordSymbolToText', () => {
@@ -149,5 +160,17 @@ describe('insertChordAfterIndex', () => {
   it('inserts after valid chord even with leading invalid token', () => {
     const pr = parseChordSequence('bad C G');
     expect(insertChordAfterIndex('bad C G', 0, 'Dm', pr)).toBe('bad C Dm G');
+  });
+
+  it('inserts after parenthesized spellings with internal spaces', () => {
+    const input = 'C (F A C Eb) Dm7';
+    const pr = parseChordSequence(input);
+    expect(insertChordAfterIndex(input, 1, 'G7', pr)).toBe('C (F A C Eb) G7 Dm7');
+  });
+
+  it('inserts after anchored parenthesized spellings with internal spaces', () => {
+    const input = 'C (F A3 C E) Dm7';
+    const pr = parseChordSequence(input);
+    expect(insertChordAfterIndex(input, 1, 'G7', pr)).toBe('C (F A3 C E) G7 Dm7');
   });
 });

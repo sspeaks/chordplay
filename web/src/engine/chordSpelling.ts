@@ -1,4 +1,13 @@
-import { CHORD_TYPES, type PitchClass, type ChordType, type ChordSymbol, type ParseResult } from '../types';
+import {
+  CHORD_TYPES,
+  hasChordQuality,
+  isSpelledChord,
+  type PitchClass,
+  type ChordType,
+  type ChordSymbol,
+  type ParseResult,
+  type SpelledNote,
+} from '../types';
 import { pitchClassToInt, pitchClassFromInt, chordIntervals, resolveRoot } from './musicTheory';
 
 export function parseNoteName(input: string): PitchClass | null {
@@ -8,6 +17,20 @@ export function parseNoteName(input: string): PitchClass | null {
   const accidental = input.length === 2 ? input[1]! : null;
   if (accidental !== null && accidental !== '#' && accidental !== 'b') return null;
   return resolveRoot(letter, accidental);
+}
+
+export function parseSpelledNoteToken(input: string): SpelledNote | null {
+  const match = input.match(/^([A-G])([#b]?)(\d*)$/);
+  if (!match) return null;
+
+  const [, letter, accidental, octaveText] = match;
+  const pitchClass = resolveRoot(letter!, accidental || null);
+  if (pitchClass === null) return null;
+
+  return {
+    pitchClass,
+    ...(octaveText !== '' ? { octave: Number.parseInt(octaveText!, 10) } : {}),
+  };
 }
 
 // Chord types eligible for reverse lookup (exclude 9th voicings that omit notes)
@@ -40,7 +63,7 @@ interface ChordMatch {
 }
 
 export function identifyChord(pcs: PitchClass[]): ChordMatch | null {
-  if (pcs.length !== 4) return null;
+  if (pcs.length < 3 || pcs.length > 4) return null;
 
   const uniquePCs = [...new Set(pcs)];
   if (uniquePCs.length < 3) return null;
@@ -84,8 +107,10 @@ export function identifyChord(pcs: PitchClass[]): ChordMatch | null {
 export function parseSpelledChord(input: string): ParseResult<ChordSymbol> {
   // Strip parentheses
   let inner = input.trim();
-  if (inner.startsWith('(')) inner = inner.slice(1);
-  if (inner.endsWith(')')) inner = inner.slice(0, -1);
+  if (!inner.startsWith('(') || !inner.endsWith(')')) {
+    return { ok: false, error: 'Expected parenthesized notes' };
+  }
+  inner = inner.slice(1, -1);
   inner = inner.trim();
 
   if (inner.length === 0) {
@@ -93,31 +118,33 @@ export function parseSpelledChord(input: string): ParseResult<ChordSymbol> {
   }
 
   const noteTokens = inner.split(/\s+/);
-  if (noteTokens.length !== 4) {
-    return { ok: false, error: `Expected 4 notes, got ${noteTokens.length}` };
+  if (noteTokens.length > 4) {
+    return { ok: false, error: `Expected 1 to 4 notes, got ${noteTokens.length}` };
   }
 
-  const pcs: PitchClass[] = [];
+  const notes: SpelledNote[] = [];
   for (const token of noteTokens) {
-    const pc = parseNoteName(token);
-    if (pc === null) {
+    const note = parseSpelledNoteToken(token);
+    if (note === null) {
       return { ok: false, error: `Invalid note: '${token}'` };
     }
-    pcs.push(pc);
+    notes.push(note);
   }
 
-  const match = identifyChord(pcs);
+  const pcs = notes.map(note => note.pitchClass);
+  const match = notes.length >= 3 ? identifyChord(pcs) : null;
 
   if (match === null) {
-    // Unrecognized — return with warning
+    const warning = notes.length >= 3;
     return {
       ok: true,
       value: {
+        kind: 'spelled',
         root: pcs[0]!,
-        quality: 'Major',
-        inversion: 0,
+        inversion: warning ? 0 : null,
         explicitVoicing: pcs,
-        warning: true,
+        notes,
+        ...(warning ? { warning: true } : {}),
       },
     };
   }
@@ -125,10 +152,12 @@ export function parseSpelledChord(input: string): ParseResult<ChordSymbol> {
   return {
     ok: true,
     value: {
+      kind: 'spelled',
       root: match.root,
       quality: match.quality,
       inversion: match.inversion,
       explicitVoicing: pcs,
+      notes,
     },
   };
 }
@@ -148,8 +177,20 @@ const PC_DISPLAY: Record<PitchClass, string> = {
   Fs: 'F♯', G: 'G', Gs: 'A♭', A: 'A', As: 'B♭', B: 'B',
 };
 
+function spelledNoteDisplay(note: SpelledNote): string {
+  return `${PC_DISPLAY[note.pitchClass] ?? note.pitchClass}${note.octave ?? ''}`;
+}
+
 export function chordDisplayName(chord: ChordSymbol): string {
   if (chord.warning) return '?';
+  if (isSpelledChord(chord)) {
+    if (!hasChordQuality(chord)) {
+      return chord.notes.map(spelledNoteDisplay).join(' ');
+    }
+    const root = PC_DISPLAY[chord.root] ?? chord.root;
+    const quality = QUALITY_DISPLAY[chord.quality] ?? '';
+    return `${root}${quality}`;
+  }
   const root = PC_DISPLAY[chord.root] ?? chord.root;
   const quality = QUALITY_DISPLAY[chord.quality] ?? '';
   const bass = chord.bass !== undefined ? `/${PC_DISPLAY[chord.bass] ?? chord.bass}` : '';

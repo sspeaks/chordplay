@@ -2,7 +2,7 @@ import { Pitch, PitchClass, Tuning, PITCH_CLASSES } from '../types';
 import { pitchToMidi, justFrequencies, equalFrequencies, hasMinorQuality, justRatioLabel, displayPitchName } from '../engine/musicTheory';
 
 interface NoteCardsProps {
-  pitches: [Pitch, Pitch, Pitch, Pitch] | null;
+  pitches: Pitch[] | null;
   root: PitchClass | null;
   tuning: Tuning;
 }

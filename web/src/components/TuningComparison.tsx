@@ -3,7 +3,7 @@ import { justFrequencies, equalFrequencies, displayPitchName } from '../engine/m
 
 interface TuningComparisonProps {
   root: PitchClass | null;
-  pitches: [Pitch, Pitch, Pitch, Pitch] | null;
+  pitches: Pitch[] | null;
   chordName: string;
 }
 

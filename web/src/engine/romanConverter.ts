@@ -1,4 +1,4 @@
-import type { ChordSymbol, ChordType, KeySignature } from '../types';
+import type { ChordType, KeySignature, StandardChordSymbol } from '../types';
 import { parseChord, tokenizeChordInput } from './parser';
 import { parseRomanChord } from './romanParser';
 import { pitchClassToInt } from './musicTheory';
@@ -43,8 +43,8 @@ function isMajorLike(quality: ChordType): boolean {
 }
 
 function detectSecondaryDominant(
-  chord: ChordSymbol,
-  nextChord: ChordSymbol | null,
+  chord: StandardChordSymbol,
+  nextChord: StandardChordSymbol | null,
   key: KeySignature,
 ): string | null {
   if (!nextChord) return null;
@@ -74,7 +74,7 @@ export function chordTextToRoman(text: string, key: KeySignature): string {
   if (text.trim() === '') return text;
 
   const tokens = tokenizeChordInput(text);
-  const chordTokens: { index: number; chord: ChordSymbol }[] = [];
+  const chordTokens: { index: number; chord: StandardChordSymbol }[] = [];
 
   for (let i = 0; i < tokens.length; i++) {
     const t = tokens[i]!;
