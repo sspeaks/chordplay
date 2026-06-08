@@ -1,10 +1,13 @@
 import {
   PITCH_CLASSES,
+  hasChordQuality,
   type PitchClass,
   type ChordType,
   type ChordSymbol,
   type KeySignature,
   type ParseResult,
+  type QualityChordSymbol,
+  type StandardChordSymbol,
 } from '../types';
 import { pitchClassToInt, pitchClassFromInt, chordIntervals } from './musicTheory';
 
@@ -29,7 +32,7 @@ const QUALITY_SUFFIX: Record<ChordType, string> = {
 };
 
 export interface ScoredSuggestion {
-  chord: ChordSymbol;
+  chord: StandardChordSymbol;
   text: string;
   score: number;
 }
@@ -45,14 +48,14 @@ function isDiatonic(pc: PitchClass, key: KeySignature): boolean {
   return getScaleIntervals(key.quality).includes(interval);
 }
 
-export function chordSymbolToText(chord: ChordSymbol): string {
+export function chordSymbolToText(chord: StandardChordSymbol): string {
   const bass = chord.bass !== undefined ? '/' + ROOT_DISPLAY[chord.bass] : '';
   return ROOT_DISPLAY[chord.root] + QUALITY_SUFFIX[chord.quality] + bass;
 }
 
 export function scoreChord(
-  current: ChordSymbol,
-  candidate: ChordSymbol,
+  current: QualityChordSymbol,
+  candidate: QualityChordSymbol,
   key: KeySignature,
 ): number {
   let score = 0;
@@ -116,12 +119,14 @@ export function generateSuggestions(
   current: ChordSymbol,
   key: KeySignature,
 ): ScoredSuggestion[] {
+  if (!hasChordQuality(current)) return [];
+
   const candidates: ScoredSuggestion[] = [];
 
   for (const root of PITCH_CLASSES) {
     for (const quality of SUGGESTION_QUALITIES) {
       if (root === current.root && quality === current.quality) continue;
-      const candidate: ChordSymbol = { root, quality, inversion: null };
+      const candidate: StandardChordSymbol = { root, quality, inversion: null };
       const score = scoreChord(current, candidate, key);
       candidates.push({ chord: candidate, text: chordSymbolToText(candidate), score });
     }

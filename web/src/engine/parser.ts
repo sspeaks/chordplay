@@ -1,4 +1,4 @@
-import type { ChordType, ChordSymbol, ParseResult, PitchClass } from '../types';
+import type { ChordType, ChordSymbol, ParseResult, PitchClass, StandardChordSymbol } from '../types';
 import { parseSpelledChord } from './chordSpelling';
 import { resolveRoot } from './musicTheory';
 
@@ -30,7 +30,7 @@ export function tokenizeChordInput(input: string): string[] {
   return tokens;
 }
 
-export function parseChord(input: string): ParseResult<ChordSymbol> {
+export function parseChord(input: string): ParseResult<StandardChordSymbol> {
   const trimmed = input.trim();
   if (trimmed.length === 0) {
     return { ok: false, error: 'Empty input' };

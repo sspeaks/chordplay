@@ -164,15 +164,23 @@ export default function SyntaxReference({ isOpen, onClose }: SyntaxReferenceProp
         </section>
 
         <section className="spelled-section">
-          <h3>Spelled Chords</h3>
+          <h3>Spelled Notes & Chords</h3>
           <p className="format-desc">
-            Enter 4 notes in parentheses to spell a chord directly.
-            The chord type is identified automatically.
+            Enter 1 to 4 notes in parentheses to play literal notes or spell a chord directly.
+            Add octave numbers only inside parentheses; outside parentheses, <code>A7</code> is still an A dominant 7 chord.
           </p>
           <div className="format-example">
-            <span className="fmt-root">(Note Note Note Note)</span>
+            <span className="fmt-root">(Note[octave] ...)</span>
           </div>
           <div className="quality-grid">
+            <div className="quality-item">
+              <span className="quality-display">Single note</span>
+              <code className="quality-code">(A)</code>
+            </div>
+            <div className="quality-item">
+              <span className="quality-display">A in octave 7</span>
+              <code className="quality-code">(A7)</code>
+            </div>
             <div className="quality-item">
               <span className="quality-display">F dom7</span>
               <code className="quality-code">(F A C Eb)</code>
@@ -185,9 +193,18 @@ export default function SyntaxReference({ isOpen, onClose }: SyntaxReferenceProp
               <span className="quality-display">D min7</span>
               <code className="quality-code">(D F A C)</code>
             </div>
+            <div className="quality-item">
+              <span className="quality-display">Anchor A3</span>
+              <code className="quality-code">(F A3 C E)</code>
+            </div>
+            <div className="quality-item">
+              <span className="quality-display">Fully anchored</span>
+              <code className="quality-code">(F3 A3 C4 Eb4)</code>
+            </div>
           </div>
           <p className="format-desc">
-            Notes are played in the order given (first = lowest pitch).
+            Unqualified notes are placed in tight harmony near any explicitly anchored notes.
+            Fully anchored notes keep their exact octaves and input order.
             Accidentals: <code>#</code> for sharp, <code>b</code> for flat.
           </p>
         </section>

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { smoothVoice, voiceChordSequence, assignOctaves } from './voiceLeading';
+import { smoothVoice, voiceChordSequence, assignOctaves, assignSpelledPitches } from './voiceLeading';
 import { pitchToMidi, voiceChord, midiToNoteName } from './musicTheory';
 import type { Pitch, PitchClass, ChordSymbol } from '../types';
 
@@ -381,9 +381,64 @@ describe('assignOctaves', () => {
     }
   });
 
-  it('returns exactly 4 pitches', () => {
-    const pitches = assignOctaves(['F', 'A', 'C', 'Ds'], 57);
-    expect(pitches.length).toBe(4);
+  it('returns the same number of pitches as the input pitch classes', () => {
+    expect(assignOctaves(['A'], 57)).toHaveLength(1);
+    expect(assignOctaves(['F', 'A'], 57)).toHaveLength(2);
+    expect(assignOctaves(['F', 'A', 'C'], 57)).toHaveLength(3);
+    expect(assignOctaves(['F', 'A', 'C', 'Ds'], 57)).toHaveLength(4);
+  });
+});
+
+describe('assignSpelledPitches', () => {
+  it('places unanchored single notes near gravity', () => {
+    expect(assignSpelledPitches([{ pitchClass: 'A' }], { gravityCenter: 57 })).toEqual([
+      { pitchClass: 'A', octave: 3 },
+    ]);
+  });
+
+  it('preserves fully anchored spellings exactly', () => {
+    const pitches = assignSpelledPitches([
+      { pitchClass: 'F', octave: 3 },
+      { pitchClass: 'A', octave: 3 },
+      { pitchClass: 'C', octave: 4 },
+      { pitchClass: 'Ds', octave: 4 },
+    ]);
+    expect(pitches).toEqual([
+      { pitchClass: 'F', octave: 3 },
+      { pitchClass: 'A', octave: 3 },
+      { pitchClass: 'C', octave: 4 },
+      { pitchClass: 'Ds', octave: 4 },
+    ]);
+  });
+
+  it('places unanchored notes tightly around an explicit A3 anchor', () => {
+    const pitches = assignSpelledPitches([
+      { pitchClass: 'F' },
+      { pitchClass: 'A', octave: 3 },
+      { pitchClass: 'C' },
+      { pitchClass: 'E' },
+    ], { gravityCenter: 57, targetSpread: 12 });
+    expect(pitches).toEqual([
+      { pitchClass: 'F', octave: 3 },
+      { pitchClass: 'A', octave: 3 },
+      { pitchClass: 'C', octave: 4 },
+      { pitchClass: 'E', octave: 4 },
+    ]);
+  });
+
+  it('keeps partial anchors tight in high octaves', () => {
+    const pitches = assignSpelledPitches([
+      { pitchClass: 'F' },
+      { pitchClass: 'A', octave: 7 },
+      { pitchClass: 'C' },
+      { pitchClass: 'E' },
+    ], { gravityCenter: 57, targetSpread: 12 });
+    expect(pitches).toEqual([
+      { pitchClass: 'F', octave: 7 },
+      { pitchClass: 'A', octave: 7 },
+      { pitchClass: 'C', octave: 8 },
+      { pitchClass: 'E', octave: 8 },
+    ]);
   });
 });
 
@@ -404,6 +459,64 @@ describe('voiceChordSequence with explicitVoicing', () => {
     for (let i = 1; i < explicitMidis.length; i++) {
       expect(explicitMidis[i]!).toBeGreaterThan(explicitMidis[i - 1]!);
     }
+  });
+
+  it('voices a fully anchored single note exactly', () => {
+    const chords: ChordSymbol[] = [
+      {
+        kind: 'spelled',
+        root: 'A',
+        inversion: null,
+        explicitVoicing: ['A'],
+        notes: [{ pitchClass: 'A', octave: 7 }],
+      },
+    ];
+    const voicings = voiceChordSequence('equal', chords);
+    expect(voicings).toEqual([[{ pitchClass: 'A', octave: 7 }]]);
+  });
+
+  it('handles voice-count changes before and after single-note events', () => {
+    const chords: ChordSymbol[] = [
+      { root: 'C', quality: 'Major', inversion: null },
+      {
+        kind: 'spelled',
+        root: 'A',
+        inversion: null,
+        explicitVoicing: ['A'],
+        notes: [{ pitchClass: 'A', octave: 7 }],
+      },
+      { root: 'G', quality: 'Dom7', inversion: null },
+    ];
+    const voicings = voiceChordSequence('equal', chords);
+    expect(voicings).toHaveLength(3);
+    expect(voicings[0]).toHaveLength(4);
+    expect(voicings[1]).toEqual([{ pitchClass: 'A', octave: 7 }]);
+    expect(voicings[2]).toHaveLength(4);
+  });
+
+  it('voices partially anchored spelled chords around their explicit anchor', () => {
+    const chords: ChordSymbol[] = [
+      {
+        kind: 'spelled',
+        root: 'F',
+        quality: 'Maj7',
+        inversion: 0,
+        explicitVoicing: ['F', 'A', 'C', 'E'],
+        notes: [
+          { pitchClass: 'F' },
+          { pitchClass: 'A', octave: 3 },
+          { pitchClass: 'C' },
+          { pitchClass: 'E' },
+        ],
+      },
+    ];
+    const voicings = voiceChordSequence(null, chords, { gravityCenter: 57, targetSpread: 12 });
+    expect(voicings[0]).toEqual([
+      { pitchClass: 'F', octave: 3 },
+      { pitchClass: 'A', octave: 3 },
+      { pitchClass: 'C', octave: 4 },
+      { pitchClass: 'E', octave: 4 },
+    ]);
   });
 });
 

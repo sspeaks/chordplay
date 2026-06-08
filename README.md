@@ -1,6 +1,6 @@
 # ChordPlay
 
-A browser-based tool for exploring barbershop quartet harmony. Enter chord sequences, hear them played with real-time Web Audio synthesis, and visualize four-part voicings with intelligent voice leading.
+A browser-based tool for exploring barbershop quartet harmony. Enter chord and note sequences, hear them played with real-time Web Audio synthesis, and visualize one- to four-note voicings with intelligent voice leading.
 
 **No backend required** — everything runs client-side.
 
@@ -9,7 +9,7 @@ A browser-based tool for exploring barbershop quartet harmony. Enter chord seque
 - **Enter chord sequences** using standard notation (`D A7 Bm G`) or Roman numerals (`I V7 vi IV`)
 - **Play chords** with harmonic overtone synthesis tuned for barbershop
 - **Compare tuning systems**: Just Intonation vs. Equal Temperament side-by-side
-- **Visualize voicings**: See all 4 voices (Bass, Baritone, Tenor, Lead) with frequencies and intervals
+- **Visualize voicings**: See notes or quartet voices with frequencies and intervals
 - **Export to WAV**: Download rendered sequences as audio files
 - **Navigate** with arrow keys or transport controls
 
@@ -25,7 +25,7 @@ npm run dev        # http://localhost:5173
 
 ```bash
 npm run build          # tsc + vite production build → dist/
-npm test               # vitest (189 tests across 9 files)
+npm test               # vitest
 npm run test:watch     # vitest watch mode
 npm run preview        # preview production build locally
 ```
@@ -43,14 +43,17 @@ nix develop            # drops you into a shell with Node.js + tooling
 | **Roots** | `C D E F G A B` — sharps/flats: `C# Db F# Gb` |
 | **Qualities** | Major (default), `m`, `7`, `maj7`, `m7`, `dim`, `dim7`, `aug`, `m7b5`, `sus4`, `sus2`, `mmaj7`, `6`, `m6`, `9` |
 | **Inversions** | `1D` (1st inversion D), `2G7` (2nd inversion G7) |
+| **Spelled notes/chords** | `(A)` single note, `(A7)` A in octave 7, `(F A3 C E)` anchored chord, `(F3 A3 C4 Eb4)` exact voicing |
 | **Roman numerals** | `I IV V7 vi ii7 viidim` with key selector |
 
-Example: `D A7 A9 D D7 Ab7 G6 Gm6 D F#7`
+Octave numbers are only parsed inside parentheses, so `A7` remains an A dominant 7 chord while `(A7)` is a single A in octave 7. Unqualified notes inside an anchored spelling are voiced in tight harmony around the explicit octave notes.
+
+Example: `D A7 (A7) (F A3 C E) D7 Ab7 G6 Gm6 D F#7`
 
 ## How It Works
 
 1. **Parser** validates chord input in real-time with color-coded error highlighting
-2. **Voice leading optimizer** assigns notes to 4 voices, minimizing movement between chords via permutation search with a weighted cost function (gravity, spread, clustering)
+2. **Voice leading optimizer** assigns notes to 1-4 voices, minimizing movement between chords via permutation search with a weighted cost function (gravity, spread, clustering)
 3. **Audio engine** synthesizes each note as 8 harmonics with ADSR envelopes — harmonic 7 is boosted to reinforce the barbershop septimal 7th
 4. **Play styles**: block (simultaneous) or arpeggio (80ms voice offset)
 
@@ -77,7 +80,7 @@ web/src/
 ├── components/                # React UI
 │   ├── ChordInput.tsx         # Textarea with syntax highlighting overlay
 │   ├── PlaybackControls.tsx   # Transport buttons, tempo slider
-│   ├── NoteCards.tsx           # 4 voice visualization cards
+│   ├── NoteCards.tsx           # Note/voice visualization cards
 │   ├── Toolbar.tsx            # Voice leading, play style, tuning toggles
 │   ├── TuningComparison.tsx   # Just vs. Equal frequency table
 │   └── SyntaxReference.tsx    # Collapsible chord syntax guide

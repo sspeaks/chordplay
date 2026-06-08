@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { parseRomanChord, parseRomanSequence } from './romanParser';
-import type { ChordSymbol, KeySignature } from '../types';
+import { hasChordQuality, isSpelledChord, type ChordSymbol, type KeySignature } from '../types';
 
 const Cmaj: KeySignature = { root: 'C', quality: 'major' };
 const Dmaj: KeySignature = { root: 'D', quality: 'major' };
@@ -200,10 +200,25 @@ describe('parseRomanSequence', () => {
     expect(result[1]!.ok).toBe(true);
     if (result[1]!.ok) {
       expect(result[1]!.value.root).toBe('F');
+      expect(hasChordQuality(result[1]!.value)).toBe(true);
+      if (!hasChordQuality(result[1]!.value)) return;
       expect(result[1]!.value.quality).toBe('Dom7');
       expect(result[1]!.value.explicitVoicing).toBeDefined();
     }
     expect(result[2]!.ok).toBe(true);
+  });
+
+  it('handles single notes and octave-qualified spellings in roman mode', () => {
+    const result = parseRomanSequence('I (A7) (F A3 C E) V7', Cmaj);
+    expect(result).toHaveLength(4);
+    expect(result.every(r => r.ok)).toBe(true);
+    if (!result[1]!.ok || !result[2]!.ok) return;
+    expect(hasChordQuality(result[1]!.value)).toBe(false);
+    expect(isSpelledChord(result[1]!.value)).toBe(true);
+    if (!isSpelledChord(result[1]!.value)) return;
+    expect(result[1]!.value.notes).toEqual([{ pitchClass: 'A', octave: 7 }]);
+    if (!isSpelledChord(result[2]!.value)) return;
+    expect(result[2]!.value.notes[1]).toEqual({ pitchClass: 'A', octave: 3 });
   });
 });
 

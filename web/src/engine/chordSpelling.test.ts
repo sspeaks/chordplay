@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { parseNoteName, identifyChord, parseSpelledChord } from './chordSpelling';
+import { hasChordQuality, isSpelledChord } from '../types';
+import { parseNoteName, parseSpelledNoteToken, identifyChord, parseSpelledChord } from './chordSpelling';
 
 describe('parseNoteName', () => {
   it('parses natural notes', () => {
@@ -39,6 +40,27 @@ describe('parseNoteName', () => {
   });
 });
 
+describe('parseSpelledNoteToken', () => {
+  it('parses pitch-class-only spelled notes', () => {
+    expect(parseSpelledNoteToken('A')).toEqual({ pitchClass: 'A' });
+    expect(parseSpelledNoteToken('Bb')).toEqual({ pitchClass: 'As' });
+    expect(parseSpelledNoteToken('C#')).toEqual({ pitchClass: 'Cs' });
+  });
+
+  it('parses optional octave suffixes', () => {
+    expect(parseSpelledNoteToken('A3')).toEqual({ pitchClass: 'A', octave: 3 });
+    expect(parseSpelledNoteToken('Bb12')).toEqual({ pitchClass: 'As', octave: 12 });
+    expect(parseSpelledNoteToken('C#4')).toEqual({ pitchClass: 'Cs', octave: 4 });
+  });
+
+  it('rejects invalid spelled note tokens', () => {
+    expect(parseSpelledNoteToken('')).toBeNull();
+    expect(parseSpelledNoteToken('H3')).toBeNull();
+    expect(parseSpelledNoteToken('A-1')).toBeNull();
+    expect(parseSpelledNoteToken('A3b')).toBeNull();
+  });
+});
+
 describe('identifyChord', () => {
   function id(notes: string[]) {
     const pcs = notes.map(n => parseNoteName(n)!);
@@ -74,6 +96,12 @@ describe('identifyChord', () => {
     expect(id(['C', 'E', 'G', 'E'])).toEqual({ root: 'C', quality: 'Major', inversion: 0 });
   });
 
+  it('identifies three-note triads', () => {
+    expect(id(['C', 'E', 'G'])).toEqual({ root: 'C', quality: 'Major', inversion: 0 });
+    expect(id(['A', 'C', 'E'])).toEqual({ root: 'A', quality: 'Minor', inversion: 0 });
+    expect(id(['G', 'C', 'E'])).toEqual({ root: 'C', quality: 'Major', inversion: 2 });
+  });
+
   it('detects inversions', () => {
     expect(id(['E', 'G', 'C', 'E'])).toEqual({ root: 'C', quality: 'Major', inversion: 1 });
     expect(id(['G', 'C', 'E', 'G'])).toEqual({ root: 'C', quality: 'Major', inversion: 2 });
@@ -99,10 +127,20 @@ describe('parseSpelledChord', () => {
     const result = parseSpelledChord('(C E G B)');
     expect(result.ok).toBe(true);
     if (!result.ok) return;
+    expect(isSpelledChord(result.value)).toBe(true);
+    expect(hasChordQuality(result.value)).toBe(true);
+    if (!hasChordQuality(result.value)) return;
     expect(result.value.root).toBe('C');
     expect(result.value.quality).toBe('Maj7');
     expect(result.value.inversion).toBe(0);
     expect(result.value.explicitVoicing).toEqual(['C', 'E', 'G', 'B']);
+    if (!isSpelledChord(result.value)) return;
+    expect(result.value.notes).toEqual([
+      { pitchClass: 'C' },
+      { pitchClass: 'E' },
+      { pitchClass: 'G' },
+      { pitchClass: 'B' },
+    ]);
     expect(result.value.warning).toBeFalsy();
   });
 
@@ -110,6 +148,8 @@ describe('parseSpelledChord', () => {
     const result = parseSpelledChord('(F A C Eb)');
     expect(result.ok).toBe(true);
     if (!result.ok) return;
+    expect(hasChordQuality(result.value)).toBe(true);
+    if (!hasChordQuality(result.value)) return;
     expect(result.value.root).toBe('F');
     expect(result.value.quality).toBe('Dom7');
     expect(result.value.explicitVoicing).toEqual(['F', 'A', 'C', 'Ds']);
@@ -119,9 +159,87 @@ describe('parseSpelledChord', () => {
     const result = parseSpelledChord('(E G C E)');
     expect(result.ok).toBe(true);
     if (!result.ok) return;
+    expect(hasChordQuality(result.value)).toBe(true);
+    if (!hasChordQuality(result.value)) return;
     expect(result.value.root).toBe('C');
     expect(result.value.quality).toBe('Major');
     expect(result.value.inversion).toBe(1);
+  });
+
+  it('parses a single note event', () => {
+    const result = parseSpelledChord('(A)');
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(isSpelledChord(result.value)).toBe(true);
+    expect(hasChordQuality(result.value)).toBe(false);
+    expect(result.value.root).toBe('A');
+    expect(result.value.inversion).toBeNull();
+    expect(result.value.explicitVoicing).toEqual(['A']);
+    expect(result.value.warning).toBeFalsy();
+    if (!isSpelledChord(result.value)) return;
+    expect(result.value.notes).toEqual([{ pitchClass: 'A' }]);
+  });
+
+  it('parses a single octave-qualified note event', () => {
+    const result = parseSpelledChord('(A7)');
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(hasChordQuality(result.value)).toBe(false);
+    expect(result.value.root).toBe('A');
+    expect(result.value.explicitVoicing).toEqual(['A']);
+    if (!isSpelledChord(result.value)) return;
+    expect(result.value.notes).toEqual([{ pitchClass: 'A', octave: 7 }]);
+  });
+
+  it('parses dyads without warning', () => {
+    const result = parseSpelledChord('(C#4 G)');
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(hasChordQuality(result.value)).toBe(false);
+    expect(result.value.warning).toBeFalsy();
+    expect(result.value.explicitVoicing).toEqual(['Cs', 'G']);
+    if (!isSpelledChord(result.value)) return;
+    expect(result.value.notes).toEqual([{ pitchClass: 'Cs', octave: 4 }, { pitchClass: 'G' }]);
+  });
+
+  it('parses three-note recognized chords', () => {
+    const result = parseSpelledChord('(C E G)');
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(hasChordQuality(result.value)).toBe(true);
+    if (!hasChordQuality(result.value)) return;
+    expect(result.value.root).toBe('C');
+    expect(result.value.quality).toBe('Major');
+    expect(result.value.explicitVoicing).toEqual(['C', 'E', 'G']);
+  });
+
+  it('preserves mixed octave anchors', () => {
+    const result = parseSpelledChord('(F A3 C E)');
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(hasChordQuality(result.value)).toBe(true);
+    expect(result.value.explicitVoicing).toEqual(['F', 'A', 'C', 'E']);
+    if (!isSpelledChord(result.value)) return;
+    expect(result.value.notes).toEqual([
+      { pitchClass: 'F' },
+      { pitchClass: 'A', octave: 3 },
+      { pitchClass: 'C' },
+      { pitchClass: 'E' },
+    ]);
+  });
+
+  it('preserves fully anchored spellings', () => {
+    const result = parseSpelledChord('(F3 A3 C4 Eb4)');
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(hasChordQuality(result.value)).toBe(true);
+    if (!isSpelledChord(result.value)) return;
+    expect(result.value.notes).toEqual([
+      { pitchClass: 'F', octave: 3 },
+      { pitchClass: 'A', octave: 3 },
+      { pitchClass: 'C', octave: 4 },
+      { pitchClass: 'Ds', octave: 4 },
+    ]);
   });
 
   it('sets warning for unrecognized spellings', () => {
@@ -131,6 +249,7 @@ describe('parseSpelledChord', () => {
     expect(result.value.warning).toBe(true);
     expect(result.value.root).toBe('C');
     expect(result.value.explicitVoicing).toEqual(['C', 'D', 'E', 'F']);
+    expect(hasChordQuality(result.value)).toBe(false);
   });
 
   it('sets warning for too few distinct pitch classes', () => {
@@ -140,8 +259,7 @@ describe('parseSpelledChord', () => {
     expect(result.value.warning).toBe(true);
   });
 
-  it('fails for wrong number of notes', () => {
-    expect(parseSpelledChord('(C E G)').ok).toBe(false);
+  it('fails for too many notes', () => {
     expect(parseSpelledChord('(C D E F G)').ok).toBe(false);
   });
 
@@ -159,7 +277,11 @@ describe('parseSpelledChord', () => {
     expect(sharp.ok).toBe(true);
     expect(flat.ok).toBe(true);
     if (!sharp.ok || !flat.ok) return;
-    expect(sharp.value.quality).toBe(flat.value.quality);
+    expect(hasChordQuality(sharp.value)).toBe(false);
+    expect(hasChordQuality(flat.value)).toBe(false);
     expect(sharp.value.root).toBe(flat.value.root);
+    expect(sharp.value.explicitVoicing).toEqual(flat.value.explicitVoicing);
+    expect(sharp.value.warning).toBe(true);
+    expect(flat.value.warning).toBe(true);
   });
 });

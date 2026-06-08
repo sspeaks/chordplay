@@ -1,4 +1,13 @@
-import type { Pitch, PitchClass, ChordSymbol, SmoothMode, VoiceLeadingOptions } from '../types';
+import {
+  isSpelledChord,
+  type Pitch,
+  type PitchClass,
+  type ChordSymbol,
+  type SmoothMode,
+  type VoiceLeadingOptions,
+  type SpelledNote,
+  type StandardChordSymbol,
+} from '../types';
 import { pitchToMidi, midiToPitch, nearestPitch, voiceChord, chordPitchClasses, pitchClassToInt, slashChordPitchClasses, inversionBassPC } from './musicTheory';
 
 export const GRAVITY_WEIGHT = 1.0;
@@ -66,10 +75,13 @@ export function smoothVoice(
   options?: VoiceLeadingOptions,
 ): Pitch[] {
   const { gravityCenter = DEFAULT_GRAVITY_CENTER, targetSpread = DEFAULT_TARGET_SPREAD } = options ?? {};
+  if (prevPitches.length !== nextPCs.length || nextPCs.length === 0) {
+    return assignOctaves(nextPCs, gravityCenter);
+  }
 
   const sorted = [...prevPitches].sort((a, b) => pitchToMidi(a) - pitchToMidi(b));
   const prevMidis = sorted.map(pitchToMidi);
-  const weights = mode === 'bass' ? [2, 1, 1, 1] : [1, 1, 1, 1];
+  const weights = nextPCs.map((_, idx) => mode === 'bass' && idx === 0 ? 2 : 1);
 
   const perms = permutations(nextPCs);
 
@@ -141,14 +153,95 @@ export function assignOctaves(pcs: PitchClass[], gravityCenter: number): Pitch[]
   return bestPitches;
 }
 
+function pitchFromSpelledNote(note: SpelledNote): Pitch {
+  return { pitchClass: note.pitchClass, octave: note.octave! };
+}
+
+function candidatePitchesAround(pc: PitchClass, targetMidi: number): Pitch[] {
+  const nearest = nearestPitch(pc, targetMidi);
+  const octaves = new Set<number>();
+  for (let delta = -2; delta <= 2; delta++) {
+    octaves.add(nearest.octave + delta);
+  }
+  return [...octaves]
+    .map(octave => ({ pitchClass: pc, octave }))
+    .sort((a, b) => pitchToMidi(a) - pitchToMidi(b));
+}
+
+export function assignSpelledPitches(
+  notes: readonly SpelledNote[],
+  options?: VoiceLeadingOptions,
+): Pitch[] {
+  const { gravityCenter = DEFAULT_GRAVITY_CENTER, targetSpread = DEFAULT_TARGET_SPREAD } = options ?? {};
+  if (notes.length === 0) return [];
+
+  if (notes.every(note => note.octave !== undefined)) {
+    return notes.map(pitchFromSpelledNote);
+  }
+
+  if (notes.every(note => note.octave === undefined)) {
+    return assignOctaves(notes.map(note => note.pitchClass), gravityCenter);
+  }
+
+  const anchors = notes
+    .filter((note): note is SpelledNote & { readonly octave: number } => note.octave !== undefined)
+    .map(pitchFromSpelledNote);
+  const anchorMidis = anchors.map(pitchToMidi);
+  const anchorCentroid = anchorMidis.reduce((sum, midi) => sum + midi, 0) / anchorMidis.length;
+  const desiredSpread = Math.min(targetSpread, DEFAULT_TARGET_SPREAD);
+
+  const candidates = notes.map(note =>
+    note.octave !== undefined
+      ? [pitchFromSpelledNote(note)]
+      : candidatePitchesAround(note.pitchClass, anchorCentroid)
+  );
+
+  let best: Pitch[] = [];
+  let bestCost = Infinity;
+  let bestSpread = Infinity;
+
+  for (const placed of cartesian(candidates)) {
+    const midis = placed.map(pitchToMidi);
+    let orderPenalty = 0;
+    for (let i = 1; i < midis.length; i++) {
+      if (midis[i]! <= midis[i - 1]!) {
+        orderPenalty += 100000 + (midis[i - 1]! - midis[i]! + 1) * 1000;
+      }
+    }
+
+    const low = Math.min(...midis);
+    const high = Math.max(...midis);
+    const spread = high - low;
+    const centroid = midis.reduce((sum, midi) => sum + midi, 0) / midis.length;
+    const unisonPenalty = (midis.length - new Set(midis).size) * 1000000;
+    const spreadPenalty = Math.abs(spread - desiredSpread) * 4;
+    const anchorPenalty = Math.abs(centroid - anchorCentroid) * 2;
+    const gravityPenalty = Math.abs(centroid - gravityCenter);
+    const distancePenalty = midis.reduce((sum, midi) => sum + Math.abs(midi - anchorCentroid), 0) * 0.1;
+    const cost = orderPenalty + unisonPenalty + spreadPenalty + anchorPenalty + gravityPenalty + distancePenalty;
+
+    if (cost < bestCost || (cost === bestCost && spread < bestSpread)) {
+      bestCost = cost;
+      bestSpread = spread;
+      best = placed;
+    }
+  }
+
+  return best;
+}
+
+function hasBass(chord: StandardChordSymbol): chord is StandardChordSymbol & { readonly bass: PitchClass } {
+  return chord.bass !== undefined;
+}
+
 function voiceSlashChord(
-  chord: ChordSymbol,
+  chord: StandardChordSymbol & { readonly bass: PitchClass },
   prevPitches: Pitch[] | null,
   mode: SmoothMode | null,
   options?: VoiceLeadingOptions,
 ): Pitch[] {
   const { gravityCenter = DEFAULT_GRAVITY_CENTER } = options ?? {};
-  const pcs = slashChordPitchClasses(chord.root, chord.quality, chord.bass!);
+  const pcs = slashChordPitchClasses(chord.root, chord.quality, chord.bass);
   const bassPc = pcs[0]!;
   const upperPCs = pcs.slice(1);
 
@@ -193,14 +286,16 @@ export function voiceChordSequence(
   if (chords.length === 0) return [];
   const { gravityCenter = DEFAULT_GRAVITY_CENTER } = options ?? {};
 
-  function voiceExplicit(chord: ChordSymbol): Pitch[] {
-    return assignOctaves(chord.explicitVoicing!, gravityCenter);
+  function voiceExplicit(chord: StandardChordSymbol, chordGravity: number): Pitch[] {
+    return assignOctaves(chord.explicitVoicing!, chordGravity);
   }
 
   if (mode === null) {
     return chords.map(c => {
-      if (c.explicitVoicing) return voiceExplicit(c);
-      if (c.bass !== undefined) return voiceSlashChord(c, null, null, options);
+      if (isSpelledChord(c)) return assignSpelledPitches(c.notes, options);
+      const chordGravity = gravityCenter + (c.octaveShift ?? 0) * 12;
+      if (c.explicitVoicing) return voiceExplicit(c, chordGravity);
+      if (hasBass(c)) return voiceSlashChord(c, null, null, options);
       const voicing = voiceChord(c.root, c.quality, c.inversion ?? 0);
       const shift = (c.octaveShift ?? 0) * 12;
       if (shift === 0) return voicing;
@@ -209,12 +304,14 @@ export function voiceChordSequence(
   }
 
   const first = chords[0]!;
-  const firstGravity = gravityCenter + (first.octaveShift ?? 0) * 12;
+  const firstGravity = isSpelledChord(first) ? gravityCenter : gravityCenter + (first.octaveShift ?? 0) * 12;
   let firstVoicing: Pitch[];
-  if (first.bass !== undefined) {
+  if (isSpelledChord(first)) {
+    firstVoicing = assignSpelledPitches(first.notes, { ...options, gravityCenter: firstGravity });
+  } else if (hasBass(first)) {
     firstVoicing = voiceSlashChord(first, null, null, options);
   } else if (first.explicitVoicing) {
-    firstVoicing = voiceExplicit(first);
+    firstVoicing = voiceExplicit(first, firstGravity);
   } else {
     const baseVoicing = voiceChord(first.root, first.quality, first.inversion ?? 0);
     const baseMidis = baseVoicing.map(pitchToMidi);
@@ -230,12 +327,14 @@ export function voiceChordSequence(
   let prev = firstVoicing;
   for (let i = 1; i < chords.length; i++) {
     const chord = chords[i]!;
-    const chordGravity = gravityCenter + (chord.octaveShift ?? 0) * 12;
+    const chordGravity = isSpelledChord(chord) ? gravityCenter : gravityCenter + (chord.octaveShift ?? 0) * 12;
     const chordOptions = { ...options, gravityCenter: chordGravity };
     let voicing: Pitch[];
-    if (chord.explicitVoicing) {
-      voicing = voiceExplicit(chord);
-    } else if (chord.bass !== undefined) {
+    if (isSpelledChord(chord)) {
+      voicing = assignSpelledPitches(chord.notes, chordOptions);
+    } else if (chord.explicitVoicing) {
+      voicing = voiceExplicit(chord, chordGravity);
+    } else if (hasBass(chord)) {
       voicing = voiceSlashChord(chord, prev, mode, chordOptions);
     } else if (chord.inversion !== null) {
       voicing = voiceWithConstrainedBass(mode, prev, chord, chordOptions);
@@ -244,7 +343,7 @@ export function voiceChordSequence(
     }
 
     // Octave shift: force whole-octave correction toward shifted gravity
-    if (chord.octaveShift) {
+    if (!isSpelledChord(chord) && chord.octaveShift) {
       const midis = voicing.map(pitchToMidi);
       const centroid = midis.reduce((a, b) => a + b, 0) / midis.length;
       const shift = Math.round((chordGravity - centroid) / 12) * 12;
@@ -263,7 +362,7 @@ export function voiceChordSequence(
 function voiceWithConstrainedBass(
   _mode: SmoothMode,
   prev: Pitch[],
-  chord: ChordSymbol,
+  chord: StandardChordSymbol,
   options?: VoiceLeadingOptions,
 ): Pitch[] {
   const allPCs = chordPitchClasses(chord.root, chord.quality);

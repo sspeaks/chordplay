@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { VoiceLeading, PlayStyle, Tuning, ChordSymbol, Pitch, PitchClass, NotationMode, KeySignature, VoiceLeadingOptions } from './types';
+import { VoiceLeading, PlayStyle, Tuning, ChordSymbol, PitchClass, NotationMode, KeySignature, VoiceLeadingOptions, hasChordQuality, type QualityChordSymbol } from './types';
 import { parseChordSequence } from './engine/parser';
 import { parseRomanSequence } from './engine/romanParser';
 import { chordTextToRoman, romanTextToStandard } from './engine/romanConverter';
@@ -10,6 +10,7 @@ import { ChordPlayer, renderSequenceOffline } from './engine/audio';
 import { encodeWav } from './engine/wav';
 import { inferKey } from './engine/keyInference';
 import { insertChordAfterIndex } from './engine/chordSuggestions';
+import { chordDisplayName } from './engine/chordSpelling';
 import Toolbar from './components/Toolbar';
 import ChordInput from './components/ChordInput';
 import PlaybackControls from './components/PlaybackControls';
@@ -62,17 +63,21 @@ export default function App() {
       .map(r => (r as { ok: true; value: ChordSymbol }).value),
     [parseResults],
   );
+  const qualityChords = useMemo<QualityChordSymbol[]>(
+    () => validChords.filter(hasChordQuality),
+    [validChords],
+  );
   
   // Auto-infer key when 2+ valid chords exist and key hasn't been manually set.
   // Skip inference in Roman mode — Roman numerals are key-relative, so inferring
   // a key from pitches that were derived from the current key is circular.
   const inferredKey = useMemo(() => {
     if (notationMode === 'roman') return null;
-    if (validChords.length >= 2) {
-      return inferKey(validChords);
+    if (qualityChords.length >= 2) {
+      return inferKey(qualityChords);
     }
     return null;
-  }, [validChords, notationMode]);
+  }, [qualityChords, notationMode]);
 
   useEffect(() => {
     if (!keyManuallySet && inferredKey &&
@@ -222,14 +227,16 @@ export default function App() {
     return () => window.removeEventListener('keydown', handler);
   }, [handlePrev, handleNext, currentChordIndex]);
 
-  const handlePreviewChord = useCallback((chord: ChordSymbol) => {
+  const handlePreviewChord = useCallback((chord: QualityChordSymbol) => {
     if (!playerRef.current) playerRef.current = new ChordPlayer();
     playerRef.current.warmUp();
+    const nextPCs = chordPitchClasses(chord.root, chord.quality);
     const pitches = currentVoicing
+      && currentVoicing.length === nextPCs.length
       ? smoothVoice(
           smoothMode ?? 'equal',
           currentVoicing,
-          chordPitchClasses(chord.root, chord.quality),
+          nextPCs,
           voiceLeadingOptions,
         )
       : voiceChord(chord.root, chord.quality, 0);
@@ -246,13 +253,9 @@ export default function App() {
   }, [chordText, currentChordIndex, parseResults, notationMode, selectedKey]);
   
   const currentRoot: PitchClass | null = currentChord?.root || null;
-  const currentPitches: [Pitch, Pitch, Pitch, Pitch] | null = 
-    (currentVoicing && currentVoicing.length === 4) 
-      ? [currentVoicing[0]!, currentVoicing[1]!, currentVoicing[2]!, currentVoicing[3]!] 
-      : null;
-  const chordName = currentChord 
-    ? `${currentChord.root} ${currentChord.quality}${currentChord.bass !== undefined ? ` / ${currentChord.bass}` : ''}${currentChord.inversion !== null ? ` (inv ${currentChord.inversion})` : ''}` 
-    : '';
+  const currentPitches = currentVoicing;
+  const currentQualityChord = currentChord && hasChordQuality(currentChord) ? currentChord : null;
+  const chordName = currentChord ? chordDisplayName(currentChord) : '';
   
   const [debugLog, setDebugLog] = useState<string[]>([]);
   const showDebug = new URLSearchParams(window.location.search).has('debug');
@@ -358,7 +361,7 @@ export default function App() {
       />
 
       <ChordSuggestions
-        currentChord={currentChord}
+        currentChord={currentQualityChord}
         selectedKey={selectedKey}
         isPlaying={isPlaying}
         isOpen={suggestionsOpen}

@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { generateSuggestions, scoreChord, chordSymbolToText, insertChordAfterIndex } from './chordSuggestions';
 import { parseChordSequence } from './parser';
-import type { ChordSymbol, KeySignature } from '../types';
+import type { ChordSymbol, KeySignature, QualityChordSymbol } from '../types';
 
-function chord(root: string, quality: string = 'Major'): ChordSymbol {
+function chord(root: string, quality: string = 'Major'): QualityChordSymbol {
   return { root: root as any, quality: quality as any, inversion: null };
 }
 
@@ -84,6 +84,17 @@ describe('generateSuggestions', () => {
     for (let i = 1; i < suggestions.length; i++) {
       expect(suggestions[i]!.score).toBeLessThanOrEqual(suggestions[i - 1]!.score);
     }
+  });
+
+  it('returns no suggestions for non-quality spelled events', () => {
+    const current: ChordSymbol = {
+      kind: 'spelled',
+      root: 'A',
+      inversion: null,
+      explicitVoicing: ['A'],
+      notes: [{ pitchClass: 'A', octave: 7 }],
+    };
+    expect(generateSuggestions(current, C_MAJOR)).toEqual([]);
   });
 });
 

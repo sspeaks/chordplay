@@ -98,8 +98,16 @@ describe('spelled chords pass through notation conversion', () => {
     expect(chordTextToRoman('Cmaj7 (F A C Eb) Dm7', Cmaj)).toBe('Imaj7 (F A C Eb) iim7');
   });
 
+  it('chordTextToRoman preserves single-note and anchored spellings', () => {
+    expect(chordTextToRoman('A7 Dm (A7) (F A3 C E)', Cmaj)).toBe('V7/ii ii (A7) (F A3 C E)');
+  });
+
   it('romanTextToStandard preserves spelled chords', () => {
     expect(romanTextToStandard('Imaj7 (F A C Eb) iim7', Cmaj)).toBe('Cmaj7 (F A C Eb) Dm7');
+  });
+
+  it('romanTextToStandard preserves single-note and anchored spellings', () => {
+    expect(romanTextToStandard('V7 (A7) (F A3 C E)', Dmaj)).toBe('A7 (A7) (F A3 C E)');
   });
 
   it('roundtrips with mixed spelled and standard chords', () => {

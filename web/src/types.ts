@@ -20,7 +20,12 @@ export interface Pitch {
   readonly octave: number;
 }
 
-export interface ChordSymbol {
+export interface SpelledNote {
+  readonly pitchClass: PitchClass;
+  readonly octave?: number;
+}
+
+export interface StandardChordSymbol {
   readonly root: PitchClass;
   readonly quality: ChordType;
   readonly inversion: number | null;  // null = auto-voice in smooth mode
@@ -28,6 +33,29 @@ export interface ChordSymbol {
   readonly explicitVoicing?: PitchClass[];  // bypass voice leading, play these notes in order
   readonly warning?: boolean;               // true if notes didn't match any known chord type
   readonly octaveShift?: number;      // undefined/0 = default, +N = up N octaves, -N = down
+}
+
+export interface SpelledChordSymbol {
+  readonly kind: 'spelled';
+  readonly root: PitchClass;
+  readonly quality?: ChordType;
+  readonly inversion: number | null;
+  readonly explicitVoicing: PitchClass[];
+  readonly notes: SpelledNote[];
+  readonly warning?: boolean;
+}
+
+export type ChordSymbol = StandardChordSymbol | SpelledChordSymbol;
+export type QualityChordSymbol =
+  | StandardChordSymbol
+  | (SpelledChordSymbol & { readonly quality: ChordType });
+
+export function isSpelledChord(chord: ChordSymbol | null | undefined): chord is SpelledChordSymbol {
+  return chord !== null && chord !== undefined && 'kind' in chord && chord.kind === 'spelled';
+}
+
+export function hasChordQuality(chord: ChordSymbol | null | undefined): chord is QualityChordSymbol {
+  return chord !== null && chord !== undefined && 'quality' in chord && chord.quality !== undefined;
 }
 
 export type Tuning = 'just' | 'equal';
