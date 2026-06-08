@@ -1,12 +1,16 @@
 import {
   PITCH_CLASSES,
+  hasChordQuality,
   type PitchClass,
   type ChordType,
   type ChordSymbol,
   type KeySignature,
   type ParseResult,
+  type QualityChordSymbol,
+  type StandardChordSymbol,
 } from '../types';
 import { pitchClassToInt, pitchClassFromInt, chordIntervals } from './musicTheory';
+import { tokenizeChordInput } from './parser';
 
 const MAJOR_SCALE = [0, 2, 4, 5, 7, 9, 11] as const;
 const MINOR_SCALE = [0, 2, 3, 5, 7, 8, 10] as const;
@@ -29,7 +33,7 @@ const QUALITY_SUFFIX: Record<ChordType, string> = {
 };
 
 export interface ScoredSuggestion {
-  chord: ChordSymbol;
+  chord: StandardChordSymbol;
   text: string;
   score: number;
 }
@@ -45,14 +49,14 @@ function isDiatonic(pc: PitchClass, key: KeySignature): boolean {
   return getScaleIntervals(key.quality).includes(interval);
 }
 
-export function chordSymbolToText(chord: ChordSymbol): string {
+export function chordSymbolToText(chord: StandardChordSymbol): string {
   const bass = chord.bass !== undefined ? '/' + ROOT_DISPLAY[chord.bass] : '';
   return ROOT_DISPLAY[chord.root] + QUALITY_SUFFIX[chord.quality] + bass;
 }
 
 export function scoreChord(
-  current: ChordSymbol,
-  candidate: ChordSymbol,
+  current: QualityChordSymbol,
+  candidate: QualityChordSymbol,
   key: KeySignature,
 ): number {
   let score = 0;
@@ -116,12 +120,14 @@ export function generateSuggestions(
   current: ChordSymbol,
   key: KeySignature,
 ): ScoredSuggestion[] {
+  if (!hasChordQuality(current)) return [];
+
   const candidates: ScoredSuggestion[] = [];
 
   for (const root of PITCH_CLASSES) {
     for (const quality of SUGGESTION_QUALITIES) {
       if (root === current.root && quality === current.quality) continue;
-      const candidate: ChordSymbol = { root, quality, inversion: null };
+      const candidate: StandardChordSymbol = { root, quality, inversion: null };
       const score = scoreChord(current, candidate, key);
       candidates.push({ chord: candidate, text: chordSymbolToText(candidate), score });
     }
@@ -151,26 +157,26 @@ export function insertChordAfterIndex(
   newChordText: string,
   parseResults: ParseResult<any>[],
 ): string {
-  const parts = chordText.split(/(\s+)/);
-  let tokenIdx = 0;
+  const tokens = tokenizeChordInput(chordText);
+  let parseResultIndex = 0;
   let validIdx = 0;
   let charPos = 0;
 
-  for (const part of parts) {
-    if (/^\s*$/.test(part)) {
-      charPos += part.length;
+  for (const token of tokens) {
+    if (/^\s*$/.test(token)) {
+      charPos += token.length;
       continue;
     }
-    const isValid = parseResults[tokenIdx]?.ok ?? false;
+    const isValid = parseResults[parseResultIndex]?.ok ?? false;
     if (isValid) {
       if (validIdx === afterValidIndex) {
-        const insertPos = charPos + part.length;
+        const insertPos = charPos + token.length;
         return chordText.slice(0, insertPos) + ' ' + newChordText + chordText.slice(insertPos);
       }
       validIdx++;
     }
-    tokenIdx++;
-    charPos += part.length;
+    parseResultIndex++;
+    charPos += token.length;
   }
 
   return chordText + ' ' + newChordText;

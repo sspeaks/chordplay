@@ -1,9 +1,19 @@
 import { describe, it, expect } from 'vitest';
 import { inferKey } from './keyInference';
-import type { ChordSymbol } from '../types';
+import type { ChordSymbol, PitchClass } from '../types';
 
 function chord(root: string, quality: string = 'Major'): ChordSymbol {
   return { root: root as any, quality: quality as any, inversion: null };
+}
+
+function spelled(root: string, notes: PitchClass[]): ChordSymbol {
+  return {
+    kind: 'spelled',
+    root: root as any,
+    inversion: null,
+    explicitVoicing: notes,
+    notes: notes.map(pitchClass => ({ pitchClass })),
+  };
 }
 
 describe('inferKey', () => {
@@ -51,6 +61,29 @@ describe('inferKey', () => {
 
   it('returns F major for F-Bb-C-F', () => {
     const chords = [chord('F'), chord('As'), chord('C'), chord('F')];
+    const result = inferKey(chords);
+    expect(result).toEqual({ root: 'F', quality: 'major' });
+  });
+
+  it('ignores single-note and dyad spelled events', () => {
+    const chords = [spelled('A', ['A']), spelled('D', ['D', 'F']), chord('C'), chord('G', 'Dom7')];
+    const result = inferKey(chords);
+    expect(result).toEqual({ root: 'C', quality: 'major' });
+  });
+
+  it('uses recognized quality-bearing spelled chords', () => {
+    const chords: ChordSymbol[] = [
+      {
+        kind: 'spelled',
+        root: 'F',
+        quality: 'Major',
+        inversion: 0,
+        explicitVoicing: ['F', 'A', 'C'],
+        notes: [{ pitchClass: 'F' }, { pitchClass: 'A' }, { pitchClass: 'C' }],
+      },
+      chord('C', 'Dom7'),
+      chord('F'),
+    ];
     const result = inferKey(chords);
     expect(result).toEqual({ root: 'F', quality: 'major' });
   });

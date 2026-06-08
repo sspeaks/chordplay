@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { parseChord, parseChordSequence, tokenizeChordInput } from './parser';
-import type { ChordSymbol } from '../types';
+import { hasChordQuality, isSpelledChord, type ChordSymbol } from '../types';
 
 function expectChord(input: string, expected: ChordSymbol) {
   const result = parseChord(input);
@@ -273,9 +273,13 @@ describe('parseChordSequence', () => {
     expect(result).toHaveLength(4);
     expect(result.every(r => r.ok)).toBe(true);
     if (result[0]!.ok) {
+      expect(isSpelledChord(result[0]!.value)).toBe(false);
+      if (isSpelledChord(result[0]!.value)) return;
       expect(result[0]!.value.bass).toBe('E');
     }
     if (result[3]!.ok) {
+      expect(hasChordQuality(result[3]!.value)).toBe(true);
+      if (!hasChordQuality(result[3]!.value)) return;
       expect(result[3]!.value.quality).toBe('Dom13');
     }
   });
@@ -287,19 +291,56 @@ describe('parseChordSequence with spelled chords', () => {
     expect(results.length).toBe(3);
     expect(results[0]!.ok).toBe(true);
     if (results[0]!.ok) {
+      expect(hasChordQuality(results[0]!.value)).toBe(true);
+      if (!hasChordQuality(results[0]!.value)) return;
       expect(results[0]!.value.quality).toBe('Maj7');
       expect(results[0]!.value.explicitVoicing).toBeUndefined();
     }
     expect(results[1]!.ok).toBe(true);
     if (results[1]!.ok) {
       expect(results[1]!.value.root).toBe('F');
+      expect(hasChordQuality(results[1]!.value)).toBe(true);
+      if (!hasChordQuality(results[1]!.value)) return;
       expect(results[1]!.value.quality).toBe('Dom7');
       expect(results[1]!.value.explicitVoicing).toBeDefined();
     }
     expect(results[2]!.ok).toBe(true);
     if (results[2]!.ok) {
+      expect(hasChordQuality(results[2]!.value)).toBe(true);
+      if (!hasChordQuality(results[2]!.value)) return;
       expect(results[2]!.value.quality).toBe('Min7');
     }
+  });
+
+  it('parses single notes, dyads, triads, and anchored spellings in sequences', () => {
+    const results = parseChordSequence('C (A) (A7) (C E G) (F A3 C E) (F3 A3 C4 Eb4) G7');
+    expect(results).toHaveLength(7);
+    expect(results.every(r => r.ok)).toBe(true);
+    if (!results[1]!.ok || !results[2]!.ok || !results[4]!.ok) return;
+    expect(isSpelledChord(results[1]!.value)).toBe(true);
+    expect(hasChordQuality(results[1]!.value)).toBe(false);
+    expect(results[1]!.value.explicitVoicing).toEqual(['A']);
+    if (!isSpelledChord(results[2]!.value)) return;
+    expect(results[2]!.value.notes).toEqual([{ pitchClass: 'A', octave: 7 }]);
+    if (!isSpelledChord(results[4]!.value)) return;
+    expect(results[4]!.value.notes[1]).toEqual({ pitchClass: 'A', octave: 3 });
+  });
+
+  it('keeps naked octave-looking chord tokens as chords', () => {
+    const results = parseChordSequence('A7 C6 C13 (A7)');
+    expect(results).toHaveLength(4);
+    expect(results.every(r => r.ok)).toBe(true);
+    if (!results[0]!.ok || !results[1]!.ok || !results[2]!.ok || !results[3]!.ok) return;
+    expect(hasChordQuality(results[0]!.value)).toBe(true);
+    expect(hasChordQuality(results[1]!.value)).toBe(true);
+    expect(hasChordQuality(results[2]!.value)).toBe(true);
+    if (!hasChordQuality(results[0]!.value) || !hasChordQuality(results[1]!.value) || !hasChordQuality(results[2]!.value)) return;
+    expect(results[0]!.value.quality).toBe('Dom7');
+    expect(results[1]!.value.quality).toBe('Maj6');
+    expect(results[2]!.value.quality).toBe('Dom13');
+    expect(hasChordQuality(results[3]!.value)).toBe(false);
+    if (!isSpelledChord(results[3]!.value)) return;
+    expect(results[3]!.value.notes).toEqual([{ pitchClass: 'A', octave: 7 }]);
   });
 
   it('parses all-spelled sequence', () => {

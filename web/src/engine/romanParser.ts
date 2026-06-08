@@ -1,10 +1,10 @@
-import type { PitchClass, ChordType, ChordSymbol, ParseResult, KeySignature } from '../types';
+import type { PitchClass, ChordType, ChordSymbol, ParseResult, KeySignature, StandardChordSymbol } from '../types';
 import { parseQuality, tokenizeChordInput } from './parser';
 import { scaleDegreeToPC, parseRomanNumeral } from './romanNumerals';
 import { parseSpelledChord } from './chordSpelling';
 import { resolveRoot } from './musicTheory';
 
-export function parseRomanChord(input: string, key: KeySignature): ParseResult<ChordSymbol> {
+export function parseRomanChord(input: string, key: KeySignature): ParseResult<StandardChordSymbol> {
   const trimmed = input.trim();
   if (trimmed.length === 0) {
     return { ok: false, error: 'Empty input' };
