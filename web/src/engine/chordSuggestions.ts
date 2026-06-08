@@ -10,6 +10,7 @@ import {
   type StandardChordSymbol,
 } from '../types';
 import { pitchClassToInt, pitchClassFromInt, chordIntervals } from './musicTheory';
+import { tokenizeChordInput } from './parser';
 
 const MAJOR_SCALE = [0, 2, 4, 5, 7, 9, 11] as const;
 const MINOR_SCALE = [0, 2, 3, 5, 7, 8, 10] as const;
@@ -156,26 +157,26 @@ export function insertChordAfterIndex(
   newChordText: string,
   parseResults: ParseResult<any>[],
 ): string {
-  const parts = chordText.split(/(\s+)/);
-  let tokenIdx = 0;
+  const tokens = tokenizeChordInput(chordText);
+  let parseResultIndex = 0;
   let validIdx = 0;
   let charPos = 0;
 
-  for (const part of parts) {
-    if (/^\s*$/.test(part)) {
-      charPos += part.length;
+  for (const token of tokens) {
+    if (/^\s*$/.test(token)) {
+      charPos += token.length;
       continue;
     }
-    const isValid = parseResults[tokenIdx]?.ok ?? false;
+    const isValid = parseResults[parseResultIndex]?.ok ?? false;
     if (isValid) {
       if (validIdx === afterValidIndex) {
-        const insertPos = charPos + part.length;
+        const insertPos = charPos + token.length;
         return chordText.slice(0, insertPos) + ' ' + newChordText + chordText.slice(insertPos);
       }
       validIdx++;
     }
-    tokenIdx++;
-    charPos += part.length;
+    parseResultIndex++;
+    charPos += token.length;
   }
 
   return chordText + ' ' + newChordText;

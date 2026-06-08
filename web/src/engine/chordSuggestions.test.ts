@@ -161,4 +161,16 @@ describe('insertChordAfterIndex', () => {
     const pr = parseChordSequence('bad C G');
     expect(insertChordAfterIndex('bad C G', 0, 'Dm', pr)).toBe('bad C Dm G');
   });
+
+  it('inserts after parenthesized spellings with internal spaces', () => {
+    const input = 'C (F A C Eb) Dm7';
+    const pr = parseChordSequence(input);
+    expect(insertChordAfterIndex(input, 1, 'G7', pr)).toBe('C (F A C Eb) G7 Dm7');
+  });
+
+  it('inserts after anchored parenthesized spellings with internal spaces', () => {
+    const input = 'C (F A3 C E) Dm7';
+    const pr = parseChordSequence(input);
+    expect(insertChordAfterIndex(input, 1, 'G7', pr)).toBe('C (F A3 C E) G7 Dm7');
+  });
 });
