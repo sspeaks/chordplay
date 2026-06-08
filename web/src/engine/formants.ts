@@ -8,35 +8,35 @@ export interface Formant {
 
 export type FormantProfile = readonly Formant[];
 
-// "ah" (IPA [ɑ]) vowel formant profiles per voice part.
-// Values from vocal acoustics literature (Sundberg 1987, Titze 2000).
-// F3/F4 boosted for singer's formant "ring" (~2500–3500 Hz).
+// Barbershop "ah" with an IPA [æ] target (the "a" in "man").
+// F1 stays open and male-colored while F2 is raised/fronted for [æ].
+// F3/F4 remain boosted for singer's formant "ring" (~2500–3500 Hz).
 // Lead gets extra F3/F4 boost for brighter projection.
 export const VOICE_FORMANTS: Record<VoicePart, FormantProfile> = {
   Bass: [
-    { freq: 650, amp: 1.0, bw: 80 },
-    { freq: 1100, amp: 0.7, bw: 90 },
+    { freq: 660, amp: 1.0, bw: 80 },
+    { freq: 1600, amp: 0.75, bw: 110 },
     { freq: 2450, amp: 0.65, bw: 120 },
     { freq: 3300, amp: 0.45, bw: 150 },
     { freq: 4100, amp: 0.2, bw: 200 },
   ],
   Bari: [
     { freq: 700, amp: 1.0, bw: 80 },
-    { freq: 1150, amp: 0.7, bw: 90 },
+    { freq: 1680, amp: 0.76, bw: 110 },
     { freq: 2500, amp: 0.65, bw: 120 },
     { freq: 3350, amp: 0.45, bw: 150 },
     { freq: 4200, amp: 0.2, bw: 200 },
   ],
   Tenor: [
-    { freq: 750, amp: 1.0, bw: 80 },
-    { freq: 1200, amp: 0.7, bw: 90 },
+    { freq: 730, amp: 1.0, bw: 80 },
+    { freq: 1760, amp: 0.76, bw: 110 },
     { freq: 2550, amp: 0.65, bw: 120 },
     { freq: 3400, amp: 0.45, bw: 150 },
     { freq: 4300, amp: 0.2, bw: 200 },
   ],
   Lead: [
-    { freq: 750, amp: 1.0, bw: 80 },
-    { freq: 1200, amp: 0.7, bw: 90 },
+    { freq: 730, amp: 1.0, bw: 80 },
+    { freq: 1760, amp: 0.78, bw: 110 },
     { freq: 2550, amp: 0.75, bw: 120 },
     { freq: 3400, amp: 0.55, bw: 150 },
     { freq: 4300, amp: 0.2, bw: 200 },

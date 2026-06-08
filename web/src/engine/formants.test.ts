@@ -5,6 +5,7 @@ import {
   VOICE_FORMANTS,
   MAX_HARMONIC_FREQ,
 } from './formants';
+import { VOICE_PARTS } from '../types';
 
 describe('VOICE_FORMANTS', () => {
   it('has profiles for all four voice parts', () => {
@@ -15,7 +16,7 @@ describe('VOICE_FORMANTS', () => {
   });
 
   it('each profile has 5 formants', () => {
-    for (const part of ['Bass', 'Bari', 'Tenor', 'Lead'] as const) {
+    for (const part of VOICE_PARTS) {
       expect(VOICE_FORMANTS[part]).toHaveLength(5);
     }
   });
@@ -33,6 +34,28 @@ describe('VOICE_FORMANTS', () => {
     expect(VOICE_FORMANTS.Lead[3]!.amp).toBeGreaterThan(
       VOICE_FORMANTS.Tenor[3]!.amp,
     );
+  });
+
+  it('targets a front /ae/ F2 while keeping open F1 by voice part', () => {
+    const expectedF2 = {
+      Bass: 1600,
+      Bari: 1680,
+      Lead: 1760,
+      Tenor: 1760,
+    };
+
+    for (const part of VOICE_PARTS) {
+      const f1 = VOICE_FORMANTS[part][0]!;
+      const f2 = VOICE_FORMANTS[part][1]!;
+
+      expect(f1.freq).toBeGreaterThanOrEqual(660);
+      expect(f1.freq).toBeLessThanOrEqual(730);
+      expect(f2.freq).toBe(expectedF2[part]);
+      expect(f2.bw).toBe(110);
+      expect(f2.amp).toBeGreaterThanOrEqual(0.75);
+      expect(f2.amp).toBeLessThanOrEqual(0.78);
+      expect(f2.freq / f1.freq).toBeGreaterThan(2.1);
+    }
   });
 });
 

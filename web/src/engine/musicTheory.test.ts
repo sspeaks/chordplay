@@ -18,6 +18,26 @@ import {
 } from './musicTheory';
 import type { Pitch } from '../types';
 
+function frequencyForPitch(pitches: Pitch[], freqs: number[], pitch: Pitch): number {
+  const midi = pitchToMidi(pitch);
+  const index = pitches.findIndex(p => pitchToMidi(p) === midi);
+  expect(index).toBeGreaterThanOrEqual(0);
+  return freqs[index]!;
+}
+
+function frequencyForPitchClass(pitches: Pitch[], freqs: number[], pitchClass: Pitch['pitchClass']): number {
+  const index = pitches.findIndex(p => p.pitchClass === pitchClass);
+  expect(index).toBeGreaterThanOrEqual(0);
+  return freqs[index]!;
+}
+
+function octaveNormalizedRatio(toneFreq: number, rootFreq: number): number {
+  let ratio = toneFreq / rootFreq;
+  while (ratio < 1) ratio *= 2;
+  while (ratio >= 2) ratio /= 2;
+  return ratio;
+}
+
 describe('pitchClassToInt', () => {
   it('maps C=0 through B=11', () => {
     expect(pitchClassToInt('C')).toBe(0);
@@ -257,6 +277,28 @@ describe('justFrequencies', () => {
     const rootFreq = freqs[0]!;
     const seventhRatio = freqs[3]! / rootFreq;
     expect(seventhRatio).toBeCloseTo(9/5, 3);  // classical minor 7th
+  });
+
+  it('keeps pure 5/4 major third and 3/2 perfect fifth across major inversions', () => {
+    for (const inversion of [0, 1, 2]) {
+      const pitches = voiceChord('C', 'Major', inversion);
+      const freqs = justFrequencies('C', pitches);
+      const rootFreq = frequencyForPitch(pitches, freqs, { pitchClass: 'C', octave: 3 });
+      const thirdFreq = frequencyForPitchClass(pitches, freqs, 'E');
+      const fifthFreq = frequencyForPitchClass(pitches, freqs, 'G');
+
+      expect(octaveNormalizedRatio(thirdFreq, rootFreq)).toBeCloseTo(5/4, 6);
+      expect(octaveNormalizedRatio(fifthFreq, rootFreq)).toBeCloseTo(3/2, 6);
+    }
+  });
+
+  it('keeps the harmonic 7/4 dominant seventh when inverted into the bass', () => {
+    const pitches = voiceChord('C', 'Dom7', 3);
+    const freqs = justFrequencies('C', pitches);
+    const rootFreq = frequencyForPitch(pitches, freqs, { pitchClass: 'C', octave: 3 });
+    const seventhFreq = frequencyForPitch(pitches, freqs, { pitchClass: 'As', octave: 2 });
+
+    expect(octaveNormalizedRatio(seventhFreq, rootFreq)).toBeCloseTo(7/4, 6);
   });
 });
 

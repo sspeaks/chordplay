@@ -1,11 +1,12 @@
 import { deflateSync, inflateSync } from 'fflate';
-import type { Tuning, VoiceLeading, PlayStyle, NotationMode, KeySignature } from '../types';
+import type { Tuning, VoiceLeading, PlayStyle, SoundMode, NotationMode, KeySignature } from '../types';
 
 export interface AppState {
   chordText: string;
   tuning: Tuning;
   voiceLeading: VoiceLeading;
   playStyle: PlayStyle;
+  soundMode: SoundMode;
   tempo: number;
   notationMode: NotationMode;
   selectedKey: KeySignature;
@@ -18,6 +19,7 @@ export const DEFAULTS: AppState = {
   tuning: 'equal',
   voiceLeading: 'smooth',
   playStyle: 'block',
+  soundMode: 'organ',
   tempo: 0.8,
   notationMode: 'standard',
   selectedKey: { root: 'C', quality: 'major' },
@@ -25,7 +27,7 @@ export const DEFAULTS: AppState = {
   targetSpread: 12,
 };
 
-type UrlKeys = { c?: string; t?: string; v?: string; s?: string; p?: number; n?: string; k?: string; g?: number; d?: number };
+type UrlKeys = { c?: string; t?: string; v?: string; s?: string; m?: string; p?: number; n?: string; k?: string; g?: number; d?: number };
 
 function toBase64Url(bytes: Uint8Array): string {
   let binary = '';
@@ -56,6 +58,7 @@ export function encodeUrlState(state: AppState): string {
   if (state.tuning !== DEFAULTS.tuning) d.t = state.tuning;
   if (state.voiceLeading !== DEFAULTS.voiceLeading) d.v = state.voiceLeading;
   if (state.playStyle !== DEFAULTS.playStyle) d.s = state.playStyle;
+  if (state.soundMode !== DEFAULTS.soundMode) d.m = state.soundMode;
   if (state.tempo !== DEFAULTS.tempo) d.p = state.tempo;
   if (state.notationMode !== DEFAULTS.notationMode) d.n = state.notationMode;
   if (state.selectedKey.root !== DEFAULTS.selectedKey.root ||
@@ -82,6 +85,7 @@ export function decodeUrlState(hash: string): Partial<AppState> {
     if (d.t !== undefined) result.tuning = d.t as Tuning;
     if (d.v !== undefined) result.voiceLeading = d.v as VoiceLeading;
     if (d.s !== undefined) result.playStyle = d.s as PlayStyle;
+    if (d.m !== undefined) result.soundMode = d.m as SoundMode;
     if (d.p !== undefined) result.tempo = d.p;
     if (d.n !== undefined) result.notationMode = d.n as NotationMode;
     if (d.k !== undefined) result.selectedKey = decodeKey(d.k);

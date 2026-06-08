@@ -32,6 +32,7 @@ export interface ChordSymbol {
 
 export type Tuning = 'just' | 'equal';
 export type PlayStyle = 'block' | 'arpeggio';
+export type SoundMode = 'human' | 'organ';
 export type VoiceLeading = 'off' | 'smooth' | 'bass';
 
 // Result type for parser
@@ -40,7 +41,7 @@ export type ParseResult<T> =
   | { ok: false; error: string };
 
 // Voice part labels for visualization
-export const VOICE_PARTS = ['Bass', 'Bari', 'Tenor', 'Lead'] as const;
+export const VOICE_PARTS = ['Bass', 'Bari', 'Lead', 'Tenor'] as const;
 export type VoicePart = typeof VOICE_PARTS[number];
 
 export type NotationMode = 'standard' | 'roman';

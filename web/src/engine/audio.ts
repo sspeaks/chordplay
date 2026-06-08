@@ -1,4 +1,13 @@
-import type { Pitch, PitchClass, Tuning, PlayStyle } from '../types';
+import {
+  VOICE_PARTS,
+  type Pitch,
+  type PitchClass,
+  type Tuning,
+  type PlayStyle,
+  type SoundMode,
+  type VoicePart,
+} from '../types';
+import { computeHarmonics, MAX_HARMONIC_FREQ } from './formants';
 import { justFrequencies, equalFrequencies } from './musicTheory';
 
 export const SAMPLE_RATE = 44100;
@@ -9,12 +18,109 @@ const DECAY = 0.100;
 const RELEASE = 0.200;
 const SUSTAIN = 0.70;
 
+const VOICE_ONSET_OFFSETS: Record<VoicePart, number> = {
+  Bass: 0,
+  Bari: 0.003,
+  Lead: 0.006,
+  Tenor: 0.009,
+};
+const HARMONIC_ATTACK_BLOOM_PER_STEP = 0.0012;
+const HARMONIC_ATTACK_BLOOM_MAX = 0.009;
+
 // Barbershop-tuned harmonic amplitudes [harmonic number, amplitude]
 // H7 boosted to reinforce septimal 7th (7/4) in V7 chords
 export const HARMONICS: readonly [number, number][] = [
   [1, 1.0], [2, 0.7], [3, 0.55], [4, 0.35],
   [5, 0.25], [6, 0.12], [7, 0.18], [8, 0.06],
 ];
+
+type HarmonicProfile = readonly (readonly [number, number])[];
+
+const LOW_HARMONIC_FLOORS: Record<VoicePart, readonly number[]> = {
+  Bass: [0.45, 0.35, 0.25, 0.20, 0.14, 0.11, 0.09, 0.07],
+  Bari: [0.45, 0.34, 0.24, 0.19, 0.13, 0.10, 0.08, 0.06],
+  Lead: [0.35, 0.25, 0.18, 0.13, 0.10, 0.075, 0.06, 0.045],
+  Tenor: [0.35, 0.25, 0.18, 0.13, 0.10, 0.075, 0.06, 0.045],
+};
+
+const HIGH_SHELF_START_HZ = 2000;
+const HIGH_SHELF_GAIN = 0.70;
+
+export function normalizeHarmonicProfile(harmonics: HarmonicProfile): [number, number][] {
+  const energy = Math.sqrt(
+    harmonics.reduce((sum, [, amplitude]) => sum + amplitude * amplitude, 0),
+  );
+  if (!Number.isFinite(energy) || energy === 0) {
+    return harmonics.map(([harmonic, amplitude]) => [harmonic, amplitude]);
+  }
+  return harmonics.map(([harmonic, amplitude]) => [harmonic, amplitude / energy]);
+}
+
+export function voicePartForIndex(index: number): VoicePart {
+  const clampedIndex = Math.max(0, Math.min(index, VOICE_PARTS.length - 1));
+  return VOICE_PARTS[clampedIndex]!;
+}
+
+function warmFormantHarmonics(
+  baseFreq: number,
+  voicePart: VoicePart,
+): [number, number][] {
+  const harmonics = new Map<number, number>(computeHarmonics(baseFreq, voicePart));
+  const floors = LOW_HARMONIC_FLOORS[voicePart];
+  const maxFloorHarmonic = Math.min(
+    floors.length,
+    Math.floor(MAX_HARMONIC_FREQ / baseFreq),
+  );
+
+  for (let harmonic = 1; harmonic <= maxFloorHarmonic; harmonic++) {
+    const floor = floors[harmonic - 1]!;
+    harmonics.set(harmonic, Math.max(harmonics.get(harmonic) ?? 0, floor));
+  }
+
+  return [...harmonics.entries()]
+    .map(([harmonic, amplitude]) => [
+      harmonic,
+      amplitude * (baseFreq * harmonic > HIGH_SHELF_START_HZ ? HIGH_SHELF_GAIN : 1),
+    ] as [number, number])
+    .sort(([a], [b]) => a - b);
+}
+
+function voicePartsByFrequencyRank(freqs: readonly number[]): VoicePart[] {
+  const voiceParts = new Array<VoicePart>(freqs.length);
+  freqs
+    .map((freq, index) => ({ freq, index }))
+    .sort((a, b) => a.freq - b.freq || a.index - b.index)
+    .forEach(({ index }, rank) => {
+      voiceParts[index] = voicePartForIndex(rank);
+    });
+  return voiceParts;
+}
+
+function onsetOffsetForVoicePart(voicePart: VoicePart): number {
+  return VOICE_ONSET_OFFSETS[voicePart];
+}
+
+function maxOnsetOffset(numVoices: number): number {
+  let maxOffset = 0;
+  for (let i = 0; i < numVoices; i++) {
+    maxOffset = Math.max(maxOffset, onsetOffsetForVoicePart(voicePartForIndex(i)));
+  }
+  return maxOffset;
+}
+
+function harmonicAttackBloom(harmonic: number): number {
+  return Math.min(
+    Math.max(0, harmonic - 1) * HARMONIC_ATTACK_BLOOM_PER_STEP,
+    HARMONIC_ATTACK_BLOOM_MAX,
+  );
+}
+
+export function normalizedFormantHarmonics(
+  baseFreq: number,
+  voicePart: VoicePart,
+): [number, number][] {
+  return normalizeHarmonicProfile(warmFormantHarmonics(baseFreq, voicePart));
+}
 
 export function envelope(duration: number, t: number): number {
   if (t < 0) return 0;
@@ -33,13 +139,14 @@ export function envelope(duration: number, t: number): number {
 
 // Schedule oscillators for a single chord onto the given AudioContext.
 // Returns the created oscillator and gain nodes.
-function scheduleChord(
+export function scheduleChord(
   ctx: BaseAudioContext,
   destination: AudioNode,
   freqs: number[],
   startTime: number,
   duration: number,
   style: PlayStyle,
+  soundMode: SoundMode = 'organ',
 ): { oscillators: OscillatorNode[]; gains: GainNode[] } {
   const oscillators: OscillatorNode[] = [];
   const gains: GainNode[] = [];
@@ -48,11 +155,17 @@ function scheduleChord(
   masterGain.connect(destination);
 
   const arpDelay = style === 'arpeggio' ? 0.080 : 0;
+  const rankedVoiceParts = soundMode === 'human' ? voicePartsByFrequencyRank(freqs) : [];
 
   freqs.forEach((baseFreq, voiceIdx) => {
-    const voiceOffset = voiceIdx * arpDelay;
+    const voicePart = soundMode === 'human' ? rankedVoiceParts[voiceIdx]! : null;
+    const voiceOffset = voiceIdx * arpDelay
+      + (voicePart ? onsetOffsetForVoicePart(voicePart) : 0);
+    const harmonics = voicePart
+      ? normalizedFormantHarmonics(baseFreq, voicePart)
+      : HARMONICS;
 
-    for (const [harmonic, amplitude] of HARMONICS) {
+    for (const [harmonic, amplitude] of harmonics) {
       const osc = ctx.createOscillator();
       osc.type = 'sine';
       osc.frequency.value = baseFreq * harmonic;
@@ -61,7 +174,8 @@ function scheduleChord(
       gain.gain.value = 0;
 
       const start = startTime + voiceOffset;
-      const attackEnd = start + ATTACK;
+      const attackEnd = start + ATTACK
+        + (soundMode === 'human' ? harmonicAttackBloom(harmonic) : 0);
       const decayEnd = attackEnd + DECAY;
       const releaseStart = start + duration - RELEASE;
       const end = start + duration;
@@ -86,10 +200,17 @@ function scheduleChord(
   return { oscillators, gains };
 }
 
-// Compute the total wall-clock duration of a single chord (including arpeggio spread).
-function chordDuration(numVoices: number, duration: number, style: PlayStyle): number {
+// Compute the total wall-clock duration of a single chord
+// (including arpeggio spread and deterministic onset staggering).
+function chordDuration(
+  numVoices: number,
+  duration: number,
+  style: PlayStyle,
+  soundMode: SoundMode = 'organ',
+): number {
   const arpDelay = style === 'arpeggio' ? 0.080 : 0;
-  return duration + (numVoices - 1) * arpDelay;
+  const onsetSpread = soundMode === 'human' ? maxOnsetOffset(numVoices) : 0;
+  return duration + Math.max(0, numVoices - 1) * arpDelay + onsetSpread;
 }
 
 // Inter-chord gap: 8% of chord duration (matches playSequence behaviour).
@@ -101,6 +222,7 @@ export async function renderSequenceOffline(
   duration: number,
   tuning: Tuning,
   style: PlayStyle,
+  soundMode: SoundMode = 'organ',
 ): Promise<AudioBuffer> {
   // Pre-compute frequencies and total length
   const chordFreqs = chords.map(c =>
@@ -111,7 +233,7 @@ export async function renderSequenceOffline(
 
   let totalSeconds = 0;
   for (let i = 0; i < chordFreqs.length; i++) {
-    totalSeconds += chordDuration(chordFreqs[i]!.length, duration, style);
+    totalSeconds += chordDuration(chordFreqs[i]!.length, duration, style, soundMode);
     if (i < chordFreqs.length - 1) {
       totalSeconds += duration * GAP_FACTOR;
     }
@@ -124,8 +246,8 @@ export async function renderSequenceOffline(
   let cursor = 0;
   for (let i = 0; i < chordFreqs.length; i++) {
     const freqs = chordFreqs[i]!;
-    scheduleChord(offCtx, offCtx.destination, freqs, cursor, duration, style);
-    cursor += chordDuration(freqs.length, duration, style);
+    scheduleChord(offCtx, offCtx.destination, freqs, cursor, duration, style, soundMode);
+    cursor += chordDuration(freqs.length, duration, style, soundMode);
     if (i < chordFreqs.length - 1) {
       cursor += duration * GAP_FACTOR;
     }
@@ -251,6 +373,7 @@ export class ChordPlayer {
     duration: number,
     tuning: Tuning,
     style: PlayStyle,
+    soundMode: SoundMode = 'organ',
   ): Promise<void> {
     this.clearAudio();
     const ctx = await this.ensureRunning();
@@ -262,11 +385,11 @@ export class ChordPlayer {
     const now = ctx.currentTime;
     console.log('[audio] playChord: scheduling %d freqs at t=%f, ctx.state=%s, destination=%o',
       freqs.length, now, ctx.state, ctx.destination);
-    this.activeNodes = scheduleChord(ctx, ctx.destination, freqs, now, duration, style);
+    this.activeNodes = scheduleChord(ctx, ctx.destination, freqs, now, duration, style, soundMode);
     console.log('[audio] scheduled %d oscillators, %d gains',
       this.activeNodes.oscillators.length, this.activeNodes.gains.length);
 
-    const total = chordDuration(freqs.length, duration, style);
+    const total = chordDuration(freqs.length, duration, style, soundMode);
     return new Promise(resolve => {
       this.playbackResolve = resolve;
       this.playbackTimer = window.setTimeout(() => {
@@ -284,13 +407,14 @@ export class ChordPlayer {
     tuning: Tuning,
     style: PlayStyle,
     onChordStart?: (index: number) => void,
+    soundMode: SoundMode = 'organ',
   ): Promise<void> {
     this.stopped = false;
     for (let i = 0; i < chords.length; i++) {
       if (this.stopped) break;
       const chord = chords[i]!;
       onChordStart?.(i);
-      await this.playChord(chord.root, chord.pitches, duration, tuning, style);
+      await this.playChord(chord.root, chord.pitches, duration, tuning, style, soundMode);
       if (this.stopped) break;
       await new Promise(resolve => setTimeout(resolve, duration * 80));
     }

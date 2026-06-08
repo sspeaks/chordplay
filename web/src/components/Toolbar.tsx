@@ -1,14 +1,16 @@
-import { VoiceLeading, PlayStyle, Tuning, NotationMode, KeySignature, PitchClass, KeyQuality } from '../types';
+import { VoiceLeading, PlayStyle, SoundMode, Tuning, NotationMode, KeySignature, PitchClass, KeyQuality } from '../types';
 import { midiToNoteName } from '../engine/musicTheory';
 
 interface ToolbarProps {
   voiceLeading: VoiceLeading;
   playStyle: PlayStyle;
+  soundMode: SoundMode;
   tuning: Tuning;
   notationMode: NotationMode;
   selectedKey: KeySignature;
   onVoiceLeadingChange: (mode: VoiceLeading) => void;
   onPlayStyleChange: (style: PlayStyle) => void;
+  onSoundModeChange: (mode: SoundMode) => void;
   onTuningChange: (tuning: Tuning) => void;
   onNotationModeChange: (mode: NotationMode) => void;
   onKeyChange: (key: KeySignature) => void;
@@ -103,11 +105,13 @@ function KeySelector({ selectedKey, onKeyChange }: {
 export default function Toolbar({
   voiceLeading,
   playStyle,
+  soundMode,
   tuning,
   notationMode,
   selectedKey,
   onVoiceLeadingChange,
   onPlayStyleChange,
+  onSoundModeChange,
   onTuningChange,
   onNotationModeChange,
   onKeyChange,
@@ -178,6 +182,14 @@ export default function Toolbar({
         value={playStyle}
         onChange={onPlayStyleChange}
         labels={{ block: 'Block', arpeggio: 'Arpeggio' }}
+      />
+
+      <ToggleGroup
+        label="Sound"
+        options={['human', 'organ'] as const}
+        value={soundMode}
+        onChange={onSoundModeChange}
+        labels={{ human: 'Voices', organ: 'Organ' }}
       />
       
       <ToggleGroup

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { VoiceLeading, PlayStyle, Tuning, ChordSymbol, Pitch, PitchClass, NotationMode, KeySignature, VoiceLeadingOptions } from './types';
+import { VoiceLeading, PlayStyle, SoundMode, Tuning, ChordSymbol, Pitch, PitchClass, NotationMode, KeySignature, VoiceLeadingOptions } from './types';
 import { parseChordSequence } from './engine/parser';
 import { parseRomanSequence } from './engine/romanParser';
 import { chordTextToRoman, romanTextToStandard } from './engine/romanConverter';
@@ -25,6 +25,7 @@ export default function App() {
   const [chordText, setChordText] = useState(initialUrlState.chordText ?? DEFAULTS.chordText);
   const [voiceLeading, setVoiceLeading] = useState<VoiceLeading>(initialUrlState.voiceLeading ?? DEFAULTS.voiceLeading);
   const [playStyle, setPlayStyle] = useState<PlayStyle>(initialUrlState.playStyle ?? DEFAULTS.playStyle);
+  const [soundMode, setSoundMode] = useState<SoundMode>(initialUrlState.soundMode ?? DEFAULTS.soundMode);
   const [tuning, setTuning] = useState<Tuning>(initialUrlState.tuning ?? DEFAULTS.tuning);
   const [tempo, setTempo] = useState(initialUrlState.tempo ?? DEFAULTS.tempo);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -40,12 +41,12 @@ export default function App() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      const state: AppState = { chordText, tuning, voiceLeading, playStyle, tempo, notationMode, selectedKey, gravityCenter, targetSpread };
+      const state: AppState = { chordText, tuning, voiceLeading, playStyle, soundMode, tempo, notationMode, selectedKey, gravityCenter, targetSpread };
       const hash = encodeUrlState(state);
       history.replaceState(null, '', hash ? `#${hash}` : window.location.pathname);
     }, 300);
     return () => clearTimeout(timer);
-  }, [chordText, tuning, voiceLeading, playStyle, tempo, notationMode, selectedKey, gravityCenter, targetSpread]);
+  }, [chordText, tuning, voiceLeading, playStyle, soundMode, tempo, notationMode, selectedKey, gravityCenter, targetSpread]);
   
   const playerRef = useRef<ChordPlayer | null>(null);
   const playingRef = useRef(false);
@@ -128,7 +129,8 @@ export default function App() {
         if (playingRef.current) {
           setCurrentChordIndex(startIdx + index);
         }
-      }
+      },
+      soundMode,
     ).then(() => {
       if (playingRef.current) {
         setIsPlaying(false);
@@ -143,14 +145,14 @@ export default function App() {
     playerRef.current?.stopCurrent();
   };
   
-  const playSingleChord = (index: number) => {
+  const playSingleChord = useCallback((index: number) => {
     if (index < 0 || index >= validChords.length) return;
     if (!playerRef.current) playerRef.current = new ChordPlayer();
     playerRef.current.warmUp();
     const chord = validChords[index]!;
     const pitches = voicings[index]!;
-    playerRef.current.playChord(chord.root, pitches, tempo, tuning, playStyle);
-  };
+    playerRef.current.playChord(chord.root, pitches, tempo, tuning, playStyle, soundMode);
+  }, [validChords, voicings, tempo, tuning, playStyle, soundMode]);
 
   const handlePrev = useCallback(() => {
     if (currentChordIndex > 0) {
@@ -158,7 +160,7 @@ export default function App() {
       setCurrentChordIndex(newIdx);
       playSingleChord(newIdx);
     }
-  }, [currentChordIndex]);
+  }, [currentChordIndex, playSingleChord]);
   
   const handleNext = useCallback(() => {
     if (currentChordIndex < validChords.length - 1) {
@@ -166,7 +168,7 @@ export default function App() {
       setCurrentChordIndex(newIdx);
       playSingleChord(newIdx);
     }
-  }, [currentChordIndex, validChords.length]);
+  }, [currentChordIndex, validChords.length, playSingleChord]);
 
   const handleReset = () => {
     setCurrentChordIndex(0);
@@ -177,7 +179,7 @@ export default function App() {
     if (playableChords.length === 0 || isExporting) return;
     setIsExporting(true);
     try {
-      const buffer = await renderSequenceOffline(playableChords, tempo, tuning, playStyle);
+      const buffer = await renderSequenceOffline(playableChords, tempo, tuning, playStyle, soundMode);
       const blob = encodeWav(buffer);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -220,7 +222,7 @@ export default function App() {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [handlePrev, handleNext, currentChordIndex]);
+  }, [handlePrev, handleNext, playSingleChord, currentChordIndex]);
 
   const handlePreviewChord = useCallback((chord: ChordSymbol) => {
     if (!playerRef.current) playerRef.current = new ChordPlayer();
@@ -233,8 +235,8 @@ export default function App() {
           voiceLeadingOptions,
         )
       : voiceChord(chord.root, chord.quality, 0);
-    playerRef.current.playChord(chord.root, pitches, tempo, tuning, playStyle);
-  }, [currentVoicing, smoothMode, voiceLeadingOptions, tempo, tuning, playStyle]);
+    playerRef.current.playChord(chord.root, pitches, tempo, tuning, playStyle, soundMode);
+  }, [currentVoicing, smoothMode, voiceLeadingOptions, tempo, tuning, playStyle, soundMode]);
 
   const handleInsertChord = useCallback((chordText_: string) => {
     const textToInsert = notationMode === 'roman'
@@ -304,7 +306,9 @@ export default function App() {
         gravityCenter={gravityCenter}
         targetSpread={targetSpread}
         onVoiceLeadingChange={setVoiceLeading}
+        soundMode={soundMode}
         onPlayStyleChange={setPlayStyle}
+        onSoundModeChange={setSoundMode}
         onTuningChange={setTuning}
         onNotationModeChange={handleNotationModeChange}
         onKeyChange={handleKeyChange}
