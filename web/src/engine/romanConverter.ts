@@ -1,4 +1,13 @@
-import type { ChordType, KeySignature, StandardChordSymbol } from '../types';
+import {
+  hasChordQuality,
+  isSpelledChord,
+  type ChordSymbol,
+  type ChordType,
+  type KeySignature,
+  type PitchClass,
+  type QualityChordSymbol,
+  type StandardChordSymbol,
+} from '../types';
 import { parseChord, tokenizeChordInput } from './parser';
 import { parseRomanChord } from './romanParser';
 import { pitchClassToInt } from './musicTheory';
@@ -42,9 +51,14 @@ function isMajorLike(quality: ChordType): boolean {
     || quality === 'Maj9no1' || quality === 'Maj9no3' || quality === 'Maj9no5' || quality === 'Maj9no7';
 }
 
+interface RootQualityChord {
+  readonly root: PitchClass;
+  readonly quality: ChordType;
+}
+
 function detectSecondaryDominant(
-  chord: StandardChordSymbol,
-  nextChord: StandardChordSymbol | null,
+  chord: RootQualityChord,
+  nextChord: RootQualityChord | null,
   key: KeySignature,
 ): string | null {
   if (!nextChord) return null;
@@ -68,6 +82,60 @@ function detectSecondaryDominant(
     : degreeToRomanLower(targetDeg);
   const accStr = targetAcc === 1 ? '#' : targetAcc === -1 ? 'b' : '';
   return accStr + targetNumeral;
+}
+
+function inversionPrefix(chord: QualityChordSymbol): string {
+  if (chord.inversion === null) return '';
+  if (isSpelledChord(chord) && chord.inversion === 0) return '';
+  return String(chord.inversion);
+}
+
+function slashBassSuffix(chord: QualityChordSymbol, key: KeySignature): string {
+  return 'bass' in chord && chord.bass !== undefined
+    ? '/' + pcToStandardName(chord.bass, isSharpKey(key))
+    : '';
+}
+
+function chordOctaveShiftSuffix(chord: QualityChordSymbol): string {
+  return 'octaveShift' in chord ? octaveShiftSuffix(chord.octaveShift) : '';
+}
+
+function qualityChordToRomanDisplayName(
+  chord: QualityChordSymbol,
+  key: KeySignature,
+  nextChord: QualityChordSymbol | null,
+): string {
+  const secDom = detectSecondaryDominant(chord, nextChord, key);
+  const invPrefix = inversionPrefix(chord);
+  const shiftSuffix = chordOctaveShiftSuffix(chord);
+
+  if (secDom) {
+    const secQual = chord.quality === 'Dom7' ? '7' : '';
+    return `${invPrefix}V${secQual}/${secDom}${shiftSuffix}`;
+  }
+
+  const { degree, accidental } = pcToScaleDegree(key, chord.root);
+  const upper = isMajorLike(chord.quality);
+  const numeral = upper ? degreeToRomanUpper(degree) : degreeToRomanLower(degree);
+  const accStr = accidental === 1 ? '#' : accidental === -1 ? 'b' : '';
+  const qualSuffix = romanQualitySuffix(chord.quality, upper);
+  const bassStr = slashBassSuffix(chord, key);
+
+  return `${invPrefix}${accStr}${numeral}${qualSuffix}${bassStr}${shiftSuffix}`;
+}
+
+export function chordToRomanDisplayName(
+  chord: ChordSymbol,
+  key: KeySignature,
+  nextChord: ChordSymbol | null = null,
+): string | null {
+  if (chord.warning || !hasChordQuality(chord)) return null;
+
+  const qualityNextChord = nextChord && !nextChord.warning && hasChordQuality(nextChord)
+    ? nextChord
+    : null;
+
+  return qualityChordToRomanDisplayName(chord, key, qualityNextChord);
 }
 
 export function chordTextToRoman(text: string, key: KeySignature): string {
@@ -99,27 +167,7 @@ export function chordTextToRoman(text: string, key: KeySignature): string {
       ? chordTokens[tokenIdx + 1]!.chord
       : null;
 
-    const secDom = detectSecondaryDominant(chord, nextChord, key);
-
-    const { degree, accidental } = pcToScaleDegree(key, chord.root);
-    const upper = isMajorLike(chord.quality);
-    const numeral = upper ? degreeToRomanUpper(degree) : degreeToRomanLower(degree);
-    const accStr = accidental === 1 ? '#' : accidental === -1 ? 'b' : '';
-    const qualSuffix = romanQualitySuffix(chord.quality, upper);
-
-    const invPrefix = chord.inversion !== null ? String(chord.inversion) : '';
-
-    const bassStr = chord.bass !== undefined
-      ? '/' + pcToStandardName(chord.bass, isSharpKey(key))
-      : '';
-    const shiftSuffix = octaveShiftSuffix(chord.octaveShift);
-
-    if (secDom) {
-      const secQual = chord.quality === 'Dom7' ? '7' : '';
-      return `${invPrefix}V${secQual}/${secDom}${shiftSuffix}`;
-    }
-
-    return `${invPrefix}${accStr}${numeral}${qualSuffix}${bassStr}${shiftSuffix}`;
+    return qualityChordToRomanDisplayName(chord, key, nextChord);
   }).join('');
 }
 

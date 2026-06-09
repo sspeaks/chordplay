@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { VoiceLeading, PlayStyle, SoundMode, Tuning, ChordSymbol, PitchClass, NotationMode, KeySignature, VoiceLeadingOptions, hasChordQuality, type QualityChordSymbol } from './types';
 import { parseChordSequence } from './engine/parser';
 import { parseRomanSequence } from './engine/romanParser';
-import { chordTextToRoman, romanTextToStandard } from './engine/romanConverter';
+import { chordTextToRoman, chordToRomanDisplayName, romanTextToStandard } from './engine/romanConverter';
 import { voiceChordSequence, smoothVoice } from './engine/voiceLeading';
 import { voiceChord, chordPitchClasses } from './engine/musicTheory';
 import { DEFAULTS, encodeUrlState, decodeUrlState, AppState } from './engine/urlState';
@@ -258,6 +258,8 @@ export default function App() {
   const currentPitches = currentVoicing;
   const currentQualityChord = currentChord && hasChordQuality(currentChord) ? currentChord : null;
   const chordName = currentChord ? chordDisplayName(currentChord) : '';
+  const nextChord = validChords[currentChordIndex + 1] ?? null;
+  const romanChordName = currentChord ? chordToRomanDisplayName(currentChord, selectedKey, nextChord) : null;
   
   const [debugLog, setDebugLog] = useState<string[]>([]);
   const showDebug = new URLSearchParams(window.location.search).has('debug');
@@ -362,6 +364,7 @@ export default function App() {
         root={currentRoot}
         pitches={currentPitches}
         chordName={chordName}
+        romanChordName={romanChordName}
       />
 
       <ChordSuggestions
