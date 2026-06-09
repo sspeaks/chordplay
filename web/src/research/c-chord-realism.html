@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>C Chord Realism Demo — ChordPlay</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #12121e;
+      color: #e0e0e0;
+      font-family: 'JetBrains Mono', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      padding: 24px;
+      line-height: 1.6;
+    }
+    main {
+      max-width: 1060px;
+      margin: 0 auto;
+    }
+    header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+    h1 { font-size: 1.4rem; font-weight: 500; margin-bottom: 8px; }
+    h2 {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+    }
+    p { color: #b8b8c8; font-size: 0.9rem; max-width: 760px; }
+    button {
+      background: #1e1e30;
+      color: #e0e0e0;
+      border: 1px solid #333;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.85rem;
+    }
+    button:hover:not(:disabled) { background: #2a2a3e; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .controls {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .technique-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .technique-card {
+      background: #1a1a2e;
+      border: 1px solid #262638;
+      border-radius: 4px;
+      padding: 16px;
+      min-height: 170px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 14px;
+    }
+    .technique-card h3 {
+      color: #4a6fa5;
+      font-size: 0.95rem;
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+    .technique-card p { font-size: 0.82rem; color: #aaa; }
+    .technique-card button {
+      align-self: flex-start;
+    }
+    .status-panel {
+      background: #1a1a2e;
+      border: 1px solid #262638;
+      border-radius: 4px;
+      padding: 16px;
+    }
+    #status-output {
+      display: block;
+      min-height: 48px;
+      color: #2a9d8f;
+      font-size: 0.85rem;
+      white-space: pre-wrap;
+    }
+    @media (max-width: 640px) {
+      body { padding: 16px; }
+      header { flex-direction: column; }
+      .controls { width: 100%; }
+      .controls button { flex: 1; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>C Chord Realism Demo</h1>
+        <p>
+          Compare a fixed C major quartet voicing across progressively more realistic
+          synthesis, blend, spatial, and sampled-voice techniques.
+        </p>
+      </div>
+      <div class="controls">
+        <button id="stop-btn" disabled>⏹ Stop</button>
+      </div>
+    </header>
+
+    <section aria-labelledby="techniques-heading">
+      <h2 id="techniques-heading">Techniques</h2>
+      <div class="technique-grid">
+        <article class="technique-card">
+          <div>
+            <h3>Organ baseline</h3>
+            <p>The existing clean oscillator sound, useful as a simple pitch and harmony reference.</p>
+          </div>
+          <button type="button" data-technique="organ-baseline">▶ Play organ baseline</button>
+        </article>
+
+        <article class="technique-card">
+          <div>
+            <h3>Current voices</h3>
+            <p>The production vocal mode from ChordPlay, acting as the current synthetic voice baseline.</p>
+          </div>
+          <button type="button" data-technique="current-voices">▶ Play current voices</button>
+        </article>
+
+        <article class="technique-card">
+          <div>
+            <h3>Research formant voices</h3>
+            <p>Four independent formant-synth voices with vibrato, breath, tilt, and amplitude motion.</p>
+          </div>
+          <button type="button" data-technique="research-formant-voices">▶ Play research voices</button>
+        </article>
+
+        <article class="technique-card">
+          <div>
+            <h3>Choir blend</h3>
+            <p>A softer ensemble-style formant preset to test whether blended voices feel more natural.</p>
+          </div>
+          <button type="button" data-technique="choir-blend">▶ Play choir blend</button>
+        </article>
+
+        <article class="technique-card">
+          <div>
+            <h3>Warm / covered</h3>
+            <p>A darker, rounder vowel color aimed at a more covered barbershop-friendly tone.</p>
+          </div>
+          <button type="button" data-technique="warm-covered">▶ Play warm covered</button>
+        </article>
+
+        <article class="technique-card">
+          <div>
+            <h3>Breathy / airy</h3>
+            <p>A brighter voice model with filtered breath noise to expose how air changes realism.</p>
+          </div>
+          <button type="button" data-technique="breathy-airy">▶ Play breathy airy</button>
+        </article>
+
+        <article class="technique-card">
+          <div>
+            <h3>Source-filter singer</h3>
+            <p>A fully synthesized singer model: glottal source excitation shaped by vocal-tract formant filters, not samples.</p>
+          </div>
+          <button type="button" data-technique="source-filter-singer">▶ Play source-filter singer</button>
+        </article>
+
+        <article class="technique-card">
+          <div>
+            <h3>Stereo + room enhanced</h3>
+            <p>Voice placement, tiny timing offsets, and room color to compare space against raw timbre.</p>
+          </div>
+          <button type="button" data-technique="stereo-room-enhanced">▶ Play stereo room</button>
+        </article>
+
+        <article class="technique-card">
+          <div>
+            <h3>Sampled voices</h3>
+            <p>Lazy-loads a local CC0 sustained-vowel recording and pitch-shifts it into the C chord.</p>
+          </div>
+          <button type="button" data-technique="sampled-voices">▶ Play sampled voices</button>
+        </article>
+      </div>
+    </section>
+
+    <section class="status-panel" aria-labelledby="status-heading">
+      <h2 id="status-heading">Status</h2>
+      <output id="status-output" role="status" aria-live="polite">
+Ready. Choose a technique to hear the C3–G3–E4–C5 comparison chord.
+      </output>
+    </section>
+  </main>
+
+  <script type="module" src="./c-chord-realism.ts"></script>
+</body>
+</html>
