@@ -12,6 +12,7 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'index.html'),
         'ah-research': resolve(__dirname, 'src/research/ah-sound.html'),
+        'c-chord-realism': resolve(__dirname, 'src/research/c-chord-realism.html'),
       },
     },
   },
