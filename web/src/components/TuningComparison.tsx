@@ -5,11 +5,13 @@ interface TuningComparisonProps {
   root: PitchClass | null;
   pitches: Pitch[] | null;
   chordName: string;
+  romanChordName?: string | null;
 }
 
 
-export default function TuningComparison({ root, pitches, chordName }: TuningComparisonProps) {
+export default function TuningComparison({ root, pitches, chordName, romanChordName }: TuningComparisonProps) {
   if (!root || !pitches) return null;
+  const displayChordName = romanChordName ? `${chordName} (${romanChordName})` : chordName;
   
   const justFreqs = justFrequencies(root, pitches);
   const equalFreqs = equalFrequencies(pitches);
@@ -30,7 +32,7 @@ export default function TuningComparison({ root, pitches, chordName }: TuningCom
   return (
     <div className="tuning-comparison">
       <div className="tuning-header">
-        <h3>Tuning Comparison: {chordName}</h3>
+        <h3>Tuning Comparison: {displayChordName}</h3>
       </div>
       
       <div className="tuning-columns">

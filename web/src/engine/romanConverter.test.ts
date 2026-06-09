@@ -1,11 +1,42 @@
 import { describe, it, expect } from 'vitest';
-import { chordTextToRoman, romanTextToStandard } from './romanConverter';
+import { chordTextToRoman, chordToRomanDisplayName, romanTextToStandard } from './romanConverter';
 import { parseChordSequence } from './parser';
-import type { KeySignature } from '../types';
+import type { ChordSymbol, KeySignature } from '../types';
 
 const Cmaj: KeySignature = { root: 'C', quality: 'major' };
 const Dmaj: KeySignature = { root: 'D', quality: 'major' };
+const Gmaj: KeySignature = { root: 'G', quality: 'major' };
 const Amin: KeySignature = { root: 'A', quality: 'minor' };
+
+function parsedChord(input: string): ChordSymbol {
+  const [result] = parseChordSequence(input);
+  expect(result?.ok).toBe(true);
+  if (!result?.ok) throw new Error(`Expected ${input} to parse`);
+  return result.value;
+}
+
+describe('chordToRomanDisplayName', () => {
+  it('labels G7 as I7 in G major', () => {
+    expect(chordToRomanDisplayName(parsedChord('G7'), Gmaj)).toBe('I7');
+  });
+
+  it('labels standard chords relative to the selected key', () => {
+    expect(chordToRomanDisplayName(parsedChord('Fmaj7'), Cmaj)).toBe('IVmaj7');
+  });
+
+  it('preserves slash bass notes', () => {
+    expect(chordToRomanDisplayName(parsedChord('G7/B'), Cmaj)).toBe('V7/B');
+  });
+
+  it('labels secondary dominants when a next chord is provided', () => {
+    expect(chordToRomanDisplayName(parsedChord('D7'), Cmaj, parsedChord('G'))).toBe('V7/V');
+  });
+
+  it('returns null for warning and unqualified spelled chords', () => {
+    expect(chordToRomanDisplayName(parsedChord('(C D E F)'), Cmaj)).toBeNull();
+    expect(chordToRomanDisplayName(parsedChord('(A7)'), Cmaj)).toBeNull();
+  });
+});
 
 describe('chordTextToRoman', () => {
   it('C Am G F in C major = I vi V IV', () => {
