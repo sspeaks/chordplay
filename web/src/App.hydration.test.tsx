@@ -42,6 +42,6 @@ describe('App — URL state hydration', () => {
 
   it('shows the correct chord count for the hydrated sequence', () => {
     render(<App />);
-    expect(screen.getByRole('status')).toHaveTextContent('Chord 1 of 2');
+    expect(document.querySelector('.chord-counter')).toHaveTextContent('Chord 1 of 2');
   });
 });

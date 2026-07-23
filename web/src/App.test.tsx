@@ -39,7 +39,10 @@ describe('App — initial render', () => {
 
   it('shows "No chords" counter with empty default input', () => {
     render(<App />);
-    expect(screen.getByRole('status')).toHaveTextContent('No chords');
+    // .chord-counter is used instead of getByRole('status') because the merged
+    // Toolbar (PR #18) added a second hidden role="status" span for clipboard
+    // announcements, making the role selector ambiguous at App level.
+    expect(document.querySelector('.chord-counter')).toHaveTextContent('No chords');
   });
 
   it('renders a text input for chord entry', () => {
@@ -52,13 +55,13 @@ describe('App — chord input', () => {
   it('updates chord counter after entering valid chords', () => {
     render(<App />);
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'C Am G' } });
-    expect(screen.getByRole('status')).toHaveTextContent('Chord 1 of 3');
+    expect(document.querySelector('.chord-counter')).toHaveTextContent('Chord 1 of 3');
   });
 
   it('shows "No chords" for all-invalid input', () => {
     render(<App />);
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'ZZZ YYY' } });
-    expect(screen.getByRole('status')).toHaveTextContent('No chords');
+    expect(document.querySelector('.chord-counter')).toHaveTextContent('No chords');
   });
 });
 
@@ -69,7 +72,7 @@ describe('App — keyboard navigation', () => {
     // Blur textarea so the keyboard handler processes the event
     fireEvent.blur(screen.getByRole('textbox'));
     fireEvent.keyDown(window, { key: 'ArrowRight' });
-    expect(screen.getByRole('status')).toHaveTextContent('Chord 2 of 3');
+    expect(document.querySelector('.chord-counter')).toHaveTextContent('Chord 2 of 3');
   });
 
   it('ArrowLeft moves to the previous chord', () => {
@@ -78,7 +81,7 @@ describe('App — keyboard navigation', () => {
     fireEvent.blur(screen.getByRole('textbox'));
     fireEvent.keyDown(window, { key: 'ArrowRight' });
     fireEvent.keyDown(window, { key: 'ArrowLeft' });
-    expect(screen.getByRole('status')).toHaveTextContent('Chord 1 of 3');
+    expect(document.querySelector('.chord-counter')).toHaveTextContent('Chord 1 of 3');
   });
 
   it('does not navigate when the textarea is focused', () => {
@@ -86,7 +89,7 @@ describe('App — keyboard navigation', () => {
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'C Am G' } });
     // Fire keyDown on the textarea itself — bubbles to window with e.target=TEXTAREA
     fireEvent.keyDown(screen.getByRole('textbox'), { key: 'ArrowRight' });
-    expect(screen.getByRole('status')).toHaveTextContent('Chord 1 of 3');
+    expect(document.querySelector('.chord-counter')).toHaveTextContent('Chord 1 of 3');
   });
 });
 

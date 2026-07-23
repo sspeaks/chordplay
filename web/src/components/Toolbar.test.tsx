@@ -11,6 +11,7 @@ const baseProps = {
   tuning: 'equal' as const,
   notationMode: 'standard' as const,
   selectedKey: { root: 'C' as const, quality: 'major' as const },
+  syntaxHelpOpen: false,
   gravityCenter: 57,
   targetSpread: 12,
   onVoiceLeadingChange: vi.fn(),
