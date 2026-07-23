@@ -221,13 +221,14 @@ export default function App() {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === 'TEXTAREA' || tag === 'INPUT' || tag === 'SELECT') return;
+      if (syntaxHelpOpen) return;
       if (e.key === 'ArrowLeft') { e.preventDefault(); handlePrev(); }
       if (e.key === 'ArrowRight') { e.preventDefault(); handleNext(); }
       if (e.key === ' ') { e.preventDefault(); playSingleChord(currentChordIndex); }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [handlePrev, handleNext, playSingleChord, currentChordIndex]);
+  }, [handlePrev, handleNext, playSingleChord, currentChordIndex, syntaxHelpOpen]);
 
   const handlePreviewChord = useCallback((chord: QualityChordSymbol) => {
     if (!playerRef.current) playerRef.current = new ChordPlayer();
@@ -320,6 +321,7 @@ export default function App() {
         onGravityCenterChange={setGravityCenter}
         onTargetSpreadChange={setTargetSpread}
         onToggleSyntaxHelp={() => setSyntaxHelpOpen(!syntaxHelpOpen)}
+        syntaxHelpOpen={syntaxHelpOpen}
         onExportWav={handleExportWav}
         exportDisabled={validChords.length === 0}
         isExporting={isExporting}
