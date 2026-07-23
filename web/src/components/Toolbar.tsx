@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from 'react';
 import { VoiceLeading, PlayStyle, SoundMode, Tuning, NotationMode, KeySignature, PitchClass, KeyQuality } from '../types';
 import { midiToNoteName } from '../engine/musicTheory';
 
@@ -42,12 +43,13 @@ function ToggleGroup<T extends string>({
   return (
     <div className="toggle-group">
       <span className="group-label">{label}</span>
-      <div className="toggle-buttons">
+      <div className="toggle-buttons" role="group" aria-label={label}>
         {options.map(opt => (
           <button
             key={opt}
             className={`toggle-btn ${value === opt ? 'active' : ''}`}
             onClick={() => onChange(opt)}
+            aria-pressed={value === opt}
           >
             {labels?.[opt] || opt}
           </button>
@@ -124,6 +126,26 @@ export default function Toolbar({
   onGravityCenterChange,
   onTargetSpreadChange,
 }: ToolbarProps) {
+  const [copied, setCopied] = useState(false);
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current !== null) clearTimeout(copyTimerRef.current);
+    };
+  }, []);
+
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      if (copyTimerRef.current !== null) clearTimeout(copyTimerRef.current);
+      setCopied(true);
+      copyTimerRef.current = setTimeout(() => {
+        setCopied(false);
+        copyTimerRef.current = null;
+      }, 1500);
+    });
+  };
+
   return (
     <div className="toolbar">
       <ToggleGroup
@@ -215,18 +237,29 @@ export default function Toolbar({
 
       <button
         className="syntax-help-btn"
-        onClick={() => {
-          navigator.clipboard.writeText(window.location.href).then(() => {
-            const btn = document.activeElement as HTMLButtonElement;
-            const orig = btn.textContent;
-            btn.textContent = 'Copied!';
-            setTimeout(() => { btn.textContent = orig; }, 1500);
-          });
-        }}
+        onClick={handleShare}
         title="Copy shareable link to clipboard"
       >
-        Share 🔗
+        {copied ? 'Copied!' : 'Share 🔗'}
       </button>
+      <span
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        style={{
+          position: 'absolute',
+          width: 1,
+          height: 1,
+          padding: 0,
+          margin: -1,
+          overflow: 'hidden',
+          clip: 'rect(0,0,0,0)',
+          whiteSpace: 'nowrap',
+          borderWidth: 0,
+        }}
+      >
+        {copied ? 'Link copied to clipboard' : ''}
+      </span>
     </div>
   );
 }
