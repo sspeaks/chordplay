@@ -1,14 +1,16 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { computeHarmonics } from './formants';
 import {
+  ChordPlayer,
   envelope,
   HARMONICS,
   normalizedFormantHarmonics,
+  renderSequenceOffline,
   SAMPLE_RATE,
   scheduleChord,
   voicePartForIndex,
 } from './audio';
-import { VOICE_PARTS, type VoicePart } from '../types';
+import { VOICE_PARTS, type Pitch, type PitchClass, type VoicePart } from '../types';
 
 interface ParamEvent {
   readonly kind: 'set' | 'linear';
@@ -29,6 +31,10 @@ class FakeAudioParam {
   linearRampToValueAtTime(value: number, time: number): FakeAudioParam {
     this.value = value;
     this.events.push({ kind: 'linear', value, time });
+    return this;
+  }
+
+  cancelScheduledValues(_time: number): FakeAudioParam {
     return this;
   }
 }
@@ -81,6 +87,62 @@ class FakeAudioContext {
     return oscillator;
   }
 }
+
+// Fake OfflineAudioContext for renderSequenceOffline tests.
+// Captures constructor dimensions and resolves startRendering() instantly.
+class FakeOfflineAudioContext {
+  readonly numberOfChannels: number;
+  readonly length: number;
+  readonly sampleRate: number;
+  readonly destination = new FakeGainNode();
+
+  constructor(channels: number, length: number, sampleRate: number) {
+    this.numberOfChannels = channels;
+    this.length = length;
+    this.sampleRate = sampleRate;
+  }
+
+  createGain(): FakeGainNode { return new FakeGainNode(); }
+  createOscillator(): FakeOscillatorNode { return new FakeOscillatorNode(); }
+
+  startRendering(): Promise<AudioBuffer> {
+    const { numberOfChannels, length, sampleRate } = this;
+    return Promise.resolve({
+      numberOfChannels,
+      length,
+      sampleRate,
+      duration: length / sampleRate,
+      getChannelData: () => new Float32Array(length),
+    } as unknown as AudioBuffer);
+  }
+}
+
+// Fake AudioContext for ChordPlayer lifecycle tests.
+// State is 'running' so ensureRunning() returns immediately.
+// Omits createMediaStreamDestination so createSilentMediaBridge returns null safely.
+class FakeAudioContextForPlayer {
+  state: AudioContextState = 'running';
+  currentTime = 0;
+  sampleRate = 44100;
+  readonly destination = new FakeGainNode();
+
+  createGain(): FakeGainNode { return new FakeGainNode(); }
+  createOscillator(): FakeOscillatorNode { return new FakeOscillatorNode(); }
+  resume(): Promise<void> { return Promise.resolve(); }
+  close(): Promise<void> { return Promise.resolve(); }
+}
+
+// Shared test chords
+const C4: Pitch = { pitchClass: 'C', octave: 4 };
+const E4: Pitch = { pitchClass: 'E', octave: 4 };
+const G4: Pitch = { pitchClass: 'G', octave: 4 };
+const C5: Pitch = { pitchClass: 'C', octave: 5 };
+const B4: Pitch = { pitchClass: 'B', octave: 4 };
+const D5: Pitch = { pitchClass: 'D', octave: 5 };
+const G5: Pitch = { pitchClass: 'G', octave: 5 };
+
+const cMajorChord = { root: 'C' as PitchClass, pitches: [C4, E4, G4, C5] };
+const gMajorChord = { root: 'G' as PitchClass, pitches: [G4, B4, D5, G5] };
 
 function harmonicGains(ctx: FakeAudioContext): FakeGainNode[] {
   return ctx.gains.filter(gain => gain.gain.events.length > 0);
@@ -462,5 +524,112 @@ describe('formant harmonic scheduling', () => {
     expect(h8Gain.gain.events[2]!.time).toBeCloseTo(h8AttackPeak.time + 0.100, 8);
     expect(h8Gain.gain.events[3]!.time).toBeCloseTo(1.05, 8);
     expect(h8Gain.gain.events[4]!.time).toBeCloseTo(1.25, 8);
+  });
+});
+
+// Release tail appended to every offline render so the last chord decays cleanly.
+const RELEASE_TAIL = 0.2;
+// Inter-chord gap as a fraction of the chord duration.
+const GAP_FACTOR = 0.08;
+// Arpeggio step delay per voice.
+const ARP_DELAY = 0.08;
+
+describe('renderSequenceOffline', () => {
+  beforeEach(() => {
+    vi.stubGlobal('OfflineAudioContext', FakeOfflineAudioContext);
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('empty sequence produces a mono 44100 Hz buffer of just the release tail', async () => {
+    const buffer = await renderSequenceOffline([], 1.0, 'equal', 'block', 'organ');
+    expect(buffer.numberOfChannels).toBe(1);
+    expect(buffer.sampleRate).toBe(SAMPLE_RATE);
+    expect(buffer.length).toBe(Math.ceil(RELEASE_TAIL * SAMPLE_RATE));
+  });
+
+  it('single 4-voice block-organ chord produces duration + release tail', async () => {
+    const buffer = await renderSequenceOffline([cMajorChord], 1.0, 'equal', 'block', 'organ');
+    expect(buffer.numberOfChannels).toBe(1);
+    expect(buffer.sampleRate).toBe(SAMPLE_RATE);
+    expect(buffer.length).toBe(Math.ceil((1.0 + RELEASE_TAIL) * SAMPLE_RATE));
+  });
+
+  it('two-chord sequence includes one inter-chord gap in buffer length', async () => {
+    const buffer = await renderSequenceOffline(
+      [cMajorChord, gMajorChord], 1.0, 'equal', 'block', 'organ',
+    );
+    // 1.0 chord + 0.08 gap + 1.0 chord + 0.2 release
+    const expected = Math.ceil((1.0 + GAP_FACTOR + 1.0 + RELEASE_TAIL) * SAMPLE_RATE);
+    expect(buffer.length).toBe(expected);
+  });
+
+  it('arpeggio style adds onset spread per extra voice to buffer length', async () => {
+    const buffer = await renderSequenceOffline([cMajorChord], 1.0, 'equal', 'arpeggio', 'organ');
+    // 4 voices → 3 extra arp delays: 1.0 + 3×0.08 + 0.2 release
+    const expected = Math.ceil((1.0 + 3 * ARP_DELAY + RELEASE_TAIL) * SAMPLE_RATE);
+    expect(buffer.length).toBe(expected);
+  });
+});
+
+describe('ChordPlayer lifecycle', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.stubGlobal('AudioContext', FakeAudioContextForPlayer);
+    // window.setTimeout / window.clearTimeout are used inside ChordPlayer.
+    // Pointing window at globalThis ensures they resolve to the fake timer versions.
+    vi.stubGlobal('window', globalThis);
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  it('warmUp creates the AudioContext without throwing', () => {
+    const player = new ChordPlayer();
+    expect(() => player.warmUp()).not.toThrow();
+  });
+
+  it('playChord resolves after its duration timer fires', async () => {
+    const player = new ChordPlayer();
+    const p = player.playChord('C', [C4, E4, G4, C5], 0.5, 'equal', 'block', 'organ');
+    await vi.runAllTimersAsync();
+    await expect(p).resolves.toBeUndefined();
+  });
+
+  it('playSequence calls onChordStart for each chord in order', async () => {
+    const player = new ChordPlayer();
+    const started: number[] = [];
+    const p = player.playSequence(
+      [cMajorChord, gMajorChord], 0.5, 'equal', 'block',
+      (i) => started.push(i),
+      'organ',
+    );
+    await vi.runAllTimersAsync();
+    expect(started).toEqual([0, 1]);
+    await p;
+  });
+
+  it('stopCurrent prevents subsequent chord starts in an active sequence', async () => {
+    const player = new ChordPlayer();
+    const started: number[] = [];
+    const p = player.playSequence(
+      [cMajorChord, gMajorChord, cMajorChord], 0.5, 'equal', 'block',
+      (i) => started.push(i),
+      'organ',
+    );
+    // onChordStart(0) fires synchronously before the first await inside playSequence
+    expect(started).toEqual([0]);
+    player.stopCurrent();
+    await vi.runAllTimersAsync();
+    expect(started).toEqual([0]);
+    await p;
+  });
+
+  it('destroy does not throw after warmUp', () => {
+    const player = new ChordPlayer();
+    player.warmUp();
+    expect(() => player.destroy()).not.toThrow();
   });
 });
