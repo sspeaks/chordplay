@@ -224,49 +224,51 @@ export default function Toolbar({
         labels={{ just: 'Just', equal: 'Equal' }}
       />
       
-      <button
-        className="syntax-help-btn"
-        onClick={onToggleSyntaxHelp}
-        aria-expanded={syntaxHelpOpen}
-        aria-controls="syntax-reference"
-      >
-        Syntax Help
-      </button>
-      
-      <button
-        className="syntax-help-btn"
-        onClick={onExportWav}
-        disabled={exportDisabled || isExporting}
-        title="Export chord sequence as WAV file"
-      >
-        {isExporting ? 'Exporting…' : 'Export WAV'}
-      </button>
+      <div className="toolbar-actions">
+        <button
+          className="syntax-help-btn"
+          onClick={onToggleSyntaxHelp}
+          aria-expanded={syntaxHelpOpen}
+          aria-controls="syntax-reference"
+        >
+          Syntax Help
+        </button>
+        
+        <button
+          className="syntax-help-btn"
+          onClick={onExportWav}
+          disabled={exportDisabled || isExporting}
+          title="Export chord sequence as WAV file"
+        >
+          {isExporting ? 'Exporting…' : 'Export WAV'}
+        </button>
 
-      <button
-        className="syntax-help-btn"
-        onClick={handleShare}
-        title="Copy shareable link to clipboard"
-      >
-        {copied ? 'Copied!' : 'Share 🔗'}
-      </button>
-      <span
-        role="status"
-        aria-live="polite"
-        aria-atomic="true"
-        style={{
-          position: 'absolute',
-          width: 1,
-          height: 1,
-          padding: 0,
-          margin: -1,
-          overflow: 'hidden',
-          clip: 'rect(0,0,0,0)',
-          whiteSpace: 'nowrap',
-          borderWidth: 0,
-        }}
-      >
-        {copied ? 'Link copied to clipboard' : ''}
-      </span>
+        <button
+          className="syntax-help-btn"
+          onClick={handleShare}
+          title="Copy shareable link to clipboard"
+        >
+          {copied ? 'Copied!' : 'Share 🔗'}
+        </button>
+        <span
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          style={{
+            position: 'absolute',
+            width: 1,
+            height: 1,
+            padding: 0,
+            margin: -1,
+            overflow: 'hidden',
+            clip: 'rect(0,0,0,0)',
+            whiteSpace: 'nowrap',
+            borderWidth: 0,
+          }}
+        >
+          {copied ? 'Link copied to clipboard' : ''}
+        </span>
+      </div>
     </div>
   );
 }
