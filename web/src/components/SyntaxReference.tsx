@@ -1,3 +1,13 @@
+import { useEffect } from 'react';
+
+// inert is a valid HTML boolean attribute supported by all modern browsers,
+// but @types/react 18.x does not include it yet. Augment locally rather than casting.
+declare module 'react' {
+  interface HTMLAttributes<T> {
+    inert?: '' | undefined;
+  }
+}
+
 interface SyntaxReferenceProps {
   isOpen: boolean;
   onClose: () => void;
@@ -39,11 +49,26 @@ const QUALITIES = [
 ];
 
 export default function SyntaxReference({ isOpen, onClose }: SyntaxReferenceProps) {
+  useEffect(() => {
+    if (!isOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { e.preventDefault(); onClose(); }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [isOpen, onClose]);
+
   return (
-    <div className={`syntax-reference ${isOpen ? 'open' : ''}`}>
+    <div
+      id="syntax-reference"
+      className={`syntax-reference ${isOpen ? 'open' : ''}`}
+      role="region"
+      aria-label="Chord syntax reference"
+      inert={isOpen ? undefined : ''}
+    >
       <div className="syntax-header">
         <h2>Chord Syntax Reference</h2>
-        <button className="close-btn" onClick={onClose}>✕</button>
+        <button className="close-btn" onClick={onClose} aria-label="Close syntax reference">✕</button>
       </div>
       
       <div className="syntax-content">
