@@ -1,5 +1,6 @@
 import { Pitch, PitchClass } from '../types';
 import { justFrequencies, equalFrequencies, displayPitchName } from '../engine/musicTheory';
+import { centsDeviationClass } from '../engine/centsClassification';
 
 interface TuningComparisonProps {
   root: PitchClass | null;
@@ -51,7 +52,7 @@ export default function TuningComparison({ root, pitches, chordName, romanChordN
           {noteData.map((note, idx) => (
             <div key={idx} className="tuning-row">
               <span className="freq-value">{note.justFreq.toFixed(2)} Hz</span>
-              <span className={`cents ${Math.abs(note.cents) < 0.5 ? 'cents-zero' : ''}`}>
+              <span className={`cents ${centsDeviationClass(note.cents)}`}>
                 {note.cents >= 0 ? '+' : ''}{note.cents.toFixed(1)}¢
               </span>
             </div>
