@@ -34,6 +34,17 @@ vi.mock('./engine/urlState', async (importOriginal) => {
 
 import App from './App';
 
+// Two role="status" elements are present when App renders. This helper selects
+// by role AND exact text so the test fails if the chord counter loses its status
+// role or if the wrong live region matches.
+function chordCounter(expectedText: string): HTMLElement {
+  const el = screen.getAllByRole('status').find(
+    el => el.textContent === expectedText,
+  );
+  if (!el) throw new Error(`No role="status" element with text "${expectedText}"`);
+  return el;
+}
+
 describe('App — URL state hydration', () => {
   it('populates the chord input from URL-encoded state', () => {
     render(<App />);
@@ -42,6 +53,6 @@ describe('App — URL state hydration', () => {
 
   it('shows the correct chord count for the hydrated sequence', () => {
     render(<App />);
-    expect(document.querySelector('.chord-counter')).toHaveTextContent('Chord 1 of 2');
+    expect(chordCounter('Chord 1 of 2')).toHaveTextContent('Chord 1 of 2');
   });
 });
