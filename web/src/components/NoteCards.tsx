@@ -1,4 +1,4 @@
-import { Pitch, PitchClass, Tuning, PITCH_CLASSES } from '../types';
+import { Pitch, PitchClass, Tuning, PITCH_CLASSES, VOICE_PARTS } from '../types';
 import { pitchToMidi, justFrequencies, equalFrequencies, hasMinorQuality, justRatioLabel, displayPitchName } from '../engine/musicTheory';
 
 interface NoteCardsProps {
@@ -49,6 +49,9 @@ export default function NoteCards({ pitches, root, tuning }: NoteCardsProps) {
             <div className="note-name" style={{ color }}>
               {displayPitchName(pitch.pitchClass, root)}{pitch.octave}
             </div>
+            {idx < VOICE_PARTS.length && (
+              <div className="voice-part">{VOICE_PARTS[idx]}</div>
+            )}
             <div className="note-freq">{freq.toFixed(2)} Hz</div>
             <div className="note-interval">{intervalName} · {ratio}</div>
           </div>

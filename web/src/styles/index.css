@@ -443,8 +443,16 @@ body {
   font-size: 0.85rem;
 }
 
-.cents-zero {
+.cents-near-pure {
   color: #2a9d8f;
+}
+
+.cents-moderate {
+  color: #aaa;
+}
+
+.cents-large {
+  color: #e07a5f;
 }
 
 /* Syntax Reference */
