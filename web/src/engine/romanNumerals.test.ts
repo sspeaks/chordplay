@@ -13,6 +13,8 @@ const Amin: KeySignature = { root: 'A', quality: 'minor' };
 const Fmaj: KeySignature = { root: 'F', quality: 'major' };
 const Fsmaj: KeySignature = { root: 'Fs', quality: 'major' };
 const Bbmaj: KeySignature = { root: 'As', quality: 'major' };
+const Emaj: KeySignature = { root: 'E', quality: 'major' };
+const Amaj: KeySignature = { root: 'A', quality: 'major' };
 
 describe('scaleDegreeToPC', () => {
   it('I in D major = D', () => {
@@ -60,8 +62,8 @@ describe('pcToScaleDegree', () => {
   it('A in D major = degree 5, accidental 0', () => {
     expect(pcToScaleDegree(Dmaj, 'A')).toEqual({ degree: 5, accidental: 0 });
   });
-  it('Gs (Ab) in D major = degree 5, accidental -1 (bV)', () => {
-    expect(pcToScaleDegree(Dmaj, 'Gs')).toEqual({ degree: 5, accidental: -1 });
+  it('Gs (G#) in D major = degree 4, accidental 1 (#IV)', () => {
+    expect(pcToScaleDegree(Dmaj, 'Gs')).toEqual({ degree: 4, accidental: 1 });
   });
   it('Ds (Eb) in C major = degree 3, accidental -1 (bIII)', () => {
     expect(pcToScaleDegree(Cmaj, 'Ds')).toEqual({ degree: 3, accidental: -1 });
@@ -71,6 +73,34 @@ describe('pcToScaleDegree', () => {
   });
   it('C in A minor = degree 3, accidental 0', () => {
     expect(pcToScaleDegree(Amin, 'C')).toEqual({ degree: 3, accidental: 0 });
+  });
+});
+
+// Regression: tritone (6 semitones) always labels as #IV across all keys.
+// The raised-4th spelling is conventional for the Lydian ♯4 and avoids Cb/Fb
+// in flat keys. pcToScaleDegree has no harmonic-function context, so a single
+// invariant (#IV) is more defensible than key-signature-direction heuristics.
+describe('pcToScaleDegree — tritone always #IV', () => {
+  it('C major + Fs → #IV (F♯)', () => {
+    expect(pcToScaleDegree(Cmaj, 'Fs')).toEqual({ degree: 4, accidental: 1 });
+  });
+  it('D major + Gs → #IV (G♯, not Ab/bV)', () => {
+    expect(pcToScaleDegree(Dmaj, 'Gs')).toEqual({ degree: 4, accidental: 1 });
+  });
+  it('E major + As → #IV (A♯)', () => {
+    expect(pcToScaleDegree(Emaj, 'As')).toEqual({ degree: 4, accidental: 1 });
+  });
+  it('F major + B → #IV (raised B♭ = B♮, not Cb/bV)', () => {
+    expect(pcToScaleDegree(Fmaj, 'B')).toEqual({ degree: 4, accidental: 1 });
+  });
+  it('Bb major + E → #IV (raised E♭ = E♮, not Fb/bV)', () => {
+    expect(pcToScaleDegree(Bbmaj, 'E')).toEqual({ degree: 4, accidental: 1 });
+  });
+  it('A major + Ds → #IV (D♯)', () => {
+    expect(pcToScaleDegree(Amaj, 'Ds')).toEqual({ degree: 4, accidental: 1 });
+  });
+  it('A minor + Ds → #IV (D♯)', () => {
+    expect(pcToScaleDegree(Amin, 'Ds')).toEqual({ degree: 4, accidental: 1 });
   });
 });
 

@@ -69,26 +69,15 @@ export function pcToScaleDegree(
     
     // For equal distance interpretations, use specific musical context rules:
     
-    // Rule 1: Context-specific preferences based on the tests
-    if (semitones === 6) { // This pitch class is 6 semitones from root
-      // For F# (6 semitones from C): prefer #IV over bV
-      if (key.root === 'C' && pc === 'Fs') {
-        if (a.degree === 4 && a.accidental === 1) return -1;
-        if (b.degree === 4 && b.accidental === 1) return 1;
-      }
-      // For G# (6 semitones from D): prefer bV over #IV 
-      if (key.root === 'D' && pc === 'Gs') {
-        if (a.degree === 5 && a.accidental === -1) return -1;
-        if (b.degree === 5 && b.accidental === -1) return 1;
-      }
-    }
-    
-    if (semitones === 3) { // This pitch class is 3 semitones from root
-      // For Eb (3 semitones from C): prefer bIII over #II
-      if (key.root === 'C' && pc === 'Ds') {
-        if (a.degree === 3 && a.accidental === -1) return -1;
-        if (b.degree === 3 && b.accidental === -1) return 1;
-      }
+    // Rule 1: Tritone (#IV) — always prefer the raised-4th spelling over the flat-5th.
+    // In sharp keys this spells as a sharp (G# in D major, A# in E major).
+    // In flat keys the tritone is the natural-sign version of the flat 4th (B♮ in
+    // F major, E♮ in B♭ major), so #IV is still more natural than bV (Cb / Fb).
+    // pcToScaleDegree receives only a pitch class and key; harmonic function is
+    // outside scope, so a single consistent convention is the defensible choice.
+    if (semitones === 6) {
+      if (a.degree === 4 && a.accidental === 1) return -1;
+      if (b.degree === 4 && b.accidental === 1) return 1;
     }
     
     // Rule 2: General harmonic preferences for common altered scale degrees
