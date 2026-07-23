@@ -16,6 +16,7 @@ interface ToolbarProps {
   onNotationModeChange: (mode: NotationMode) => void;
   onKeyChange: (key: KeySignature) => void;
   onToggleSyntaxHelp: () => void;
+  syntaxHelpOpen: boolean;
   onExportWav: () => void;
   exportDisabled: boolean;
   isExporting: boolean;
@@ -118,6 +119,7 @@ export default function Toolbar({
   onNotationModeChange,
   onKeyChange,
   onToggleSyntaxHelp,
+  syntaxHelpOpen,
   onExportWav,
   exportDisabled,
   isExporting,
@@ -222,7 +224,12 @@ export default function Toolbar({
         labels={{ just: 'Just', equal: 'Equal' }}
       />
       
-      <button className="syntax-help-btn" onClick={onToggleSyntaxHelp}>
+      <button
+        className="syntax-help-btn"
+        onClick={onToggleSyntaxHelp}
+        aria-expanded={syntaxHelpOpen}
+        aria-controls="syntax-reference"
+      >
         Syntax Help
       </button>
       
