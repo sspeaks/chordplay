@@ -31,6 +31,7 @@ export default function PlaybackControls({
           onClick={onReset}
           disabled={totalChords === 0}
           title="Reset to beginning"
+          aria-label="Reset to beginning"
         >
           ◀◀
         </button>
@@ -39,6 +40,7 @@ export default function PlaybackControls({
           onClick={onPrev}
           disabled={totalChords === 0}
           title="Previous chord (←)"
+          aria-label="Previous chord"
         >
           ◀
         </button>
@@ -47,6 +49,7 @@ export default function PlaybackControls({
           onClick={isPlaying ? onStop : onPlay}
           disabled={totalChords === 0}
           title={isPlaying ? 'Stop' : 'Play from current chord'}
+          aria-label={isPlaying ? 'Stop' : 'Play from current chord'}
         >
           {isPlaying ? '■' : '▶'}
         </button>
@@ -55,6 +58,7 @@ export default function PlaybackControls({
           onClick={onNext}
           disabled={totalChords === 0}
           title="Next chord (→)"
+          aria-label="Next chord"
         >
           ▶
         </button>
@@ -75,7 +79,7 @@ export default function PlaybackControls({
         <span className="tempo-value">{tempo.toFixed(1)}s</span>
       </div>
       
-      <div className="chord-counter">
+      <div className="chord-counter" role="status" aria-live="polite" aria-atomic="true">
         {totalChords > 0 ? (
           <>Chord {currentChordIndex + 1} of {totalChords}</>
         ) : (
